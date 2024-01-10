@@ -179,6 +179,7 @@ class UserActivity : BaseActivity<ActivityUserBinding>(), AppListener {
                         viewModel.loadState = mAdapter.LOADING_COMPLETE
                         mAdapter.setLoadState(viewModel.loadState, null)
                     } else if (feed.data?.isEmpty() == true) {
+                        if (viewModel.isRefreshing) viewModel.feedList.clear()
                         viewModel.loadState = mAdapter.LOADING_END
                         mAdapter.setLoadState(viewModel.loadState, null)
                         viewModel.isEnd = true
@@ -313,35 +314,31 @@ class UserActivity : BaseActivity<ActivityUserBinding>(), AppListener {
             override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
                 super.onScrollStateChanged(recyclerView, newState)
                 if (newState == RecyclerView.SCROLL_STATE_IDLE) {
+
+                    if (viewModel.feedList.isNotEmpty() && !viewModel.isEnd) {
+                        if (resources.configuration.orientation == Configuration.ORIENTATION_PORTRAIT) {
+                            viewModel.lastVisibleItemPosition =
+                                mLayoutManager.findLastVisibleItemPosition()
+                        } else {
+                            val result =
+                                mCheckForGapMethod.invoke(binding.recyclerView.layoutManager) as Boolean
+                            if (result)
+                                mMarkItemDecorInsetsDirtyMethod.invoke(binding.recyclerView)
+
+                            val positions = sLayoutManager.findLastVisibleItemPositions(null)
+                            for (pos in positions) {
+                                if (pos > viewModel.lastVisibleItemPosition) {
+                                    viewModel.lastVisibleItemPosition = pos
+                                }
+                            }
+                        }
+                    }
+
                     if (viewModel.lastVisibleItemPosition == viewModel.feedList.size
                         && !viewModel.isEnd && !viewModel.isRefreshing && !viewModel.isLoadMore
                     ) {
                         viewModel.page++
                         loadMore()
-                    }
-                }
-            }
-
-            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
-                super.onScrolled(recyclerView, dx, dy)
-                if (viewModel.feedList.isNotEmpty()) {
-                    if (resources.configuration.orientation == Configuration.ORIENTATION_PORTRAIT) {
-                        viewModel.lastVisibleItemPosition =
-                            mLayoutManager.findLastVisibleItemPosition()
-                        viewModel.firstCompletelyVisibleItemPosition =
-                            mLayoutManager.findFirstCompletelyVisibleItemPosition()
-                    } else {
-                        val result =
-                            mCheckForGapMethod.invoke(binding.recyclerView.layoutManager) as Boolean
-                        if (result)
-                            mMarkItemDecorInsetsDirtyMethod.invoke(binding.recyclerView)
-
-                        val positions = sLayoutManager.findLastVisibleItemPositions(null)
-                        for (pos in positions) {
-                            if (pos > viewModel.lastVisibleItemPosition) {
-                                viewModel.lastVisibleItemPosition = pos
-                            }
-                        }
                     }
                 }
             }
@@ -392,7 +389,7 @@ class UserActivity : BaseActivity<ActivityUserBinding>(), AppListener {
         viewModel.isRefreshing = true
         viewModel.isEnd = false
         if (viewModel.id.isNullOrEmpty())
-            viewModel.id = intent.getStringExtra("id")!!
+            viewModel.id = intent.getStringExtra("id")
         viewModel.isNew = true
         viewModel.getUser()
     }
@@ -428,8 +425,8 @@ class UserActivity : BaseActivity<ActivityUserBinding>(), AppListener {
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
         menuInflater.inflate(R.menu.user_menu, menu)
 
-        val itemBlock = menu!!.findItem(R.id.block)
-        val spannableString = SpannableString(itemBlock.title)
+        val itemBlock = menu?.findItem(R.id.block)
+        val spannableString = SpannableString(itemBlock?.title)
         spannableString.setSpan(
             ForegroundColorSpan(
                 ThemeUtils.getThemeAttrColor(
@@ -441,11 +438,11 @@ class UserActivity : BaseActivity<ActivityUserBinding>(), AppListener {
             spannableString.length,
             0
         )
-        itemBlock.title = spannableString
+        itemBlock?.title = spannableString
 
 
-        val itemShare = menu.findItem(R.id.share)
-        val spannableString1 = SpannableString(itemShare.title)
+        val itemShare = menu?.findItem(R.id.share)
+        val spannableString1 = SpannableString(itemShare?.title)
         spannableString1.setSpan(
             ForegroundColorSpan(
                 ThemeUtils.getThemeAttrColor(
@@ -457,10 +454,10 @@ class UserActivity : BaseActivity<ActivityUserBinding>(), AppListener {
             spannableString1.length,
             0
         )
-        itemShare.title = spannableString1
+        itemShare?.title = spannableString1
 
-        val itemReport = menu.findItem(R.id.report)
-        val spannableString2 = SpannableString(itemReport.title)
+        val itemReport = menu?.findItem(R.id.report)
+        val spannableString2 = SpannableString(itemReport?.title)
         spannableString2.setSpan(
             ForegroundColorSpan(
                 ThemeUtils.getThemeAttrColor(
@@ -472,7 +469,7 @@ class UserActivity : BaseActivity<ActivityUserBinding>(), AppListener {
             spannableString2.length,
             0
         )
-        itemReport.title = spannableString2
+        itemReport?.title = spannableString2
 
         return true
     }

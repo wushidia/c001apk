@@ -25,13 +25,14 @@ import com.example.c001apk.R
 import com.example.c001apk.databinding.ActivityWebViewBinding
 import com.example.c001apk.util.ClipboardUtil.copyText
 import com.example.c001apk.util.PrefManager
+import com.example.c001apk.util.http2https
 import com.google.android.material.snackbar.Snackbar
 import java.net.URISyntaxException
 
 
 class WebViewActivity : BaseActivity<ActivityWebViewBinding>() {
 
-    private lateinit var link: String
+    private var link: String? = null
 
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -40,8 +41,10 @@ class WebViewActivity : BaseActivity<ActivityWebViewBinding>() {
         setSupportActionBar(binding.toolBar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
-        link = intent.getStringExtra("url")!!
-        loadUrlInWebView()
+        link = intent.getStringExtra("url")
+        link?.let {
+            loadUrlInWebView(it.http2https())
+        }
 
         if (SDK_INT >= 32) {
             if (WebViewFeature.isFeatureSupported(WebViewFeature.ALGORITHMIC_DARKENING)) {
@@ -69,7 +72,7 @@ class WebViewActivity : BaseActivity<ActivityWebViewBinding>() {
     }
 
     @SuppressLint("SetJavaScriptEnabled")
-    private fun loadUrlInWebView() {
+    private fun loadUrlInWebView(url: String) {
         binding.webView.settings.apply {
             javaScriptEnabled = true
             domStorageEnabled = true
@@ -172,7 +175,7 @@ class WebViewActivity : BaseActivity<ActivityWebViewBinding>() {
                     binding.toolBar.title = title
                 }
             }
-            loadUrl(link, mutableMapOf("X-Requested-With" to "com.coolapk.market"))
+            loadUrl(url, mutableMapOf("X-Requested-With" to "com.coolapk.market"))
         }
     }
 
@@ -189,7 +192,9 @@ class WebViewActivity : BaseActivity<ActivityWebViewBinding>() {
             R.id.refresh -> binding.webView.reload()
 
             R.id.copyLink -> {
-                copyText(this, link)
+                link?.let {
+                    copyText(this, it.http2https())
+                }
             }
 
             R.id.openInBrowser -> {

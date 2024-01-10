@@ -101,7 +101,7 @@ object ImageUtil {
             .diskCacheStrategy(DiskCacheStrategy.ALL)
             .transition(withCrossFade(100))
             .skipMemoryCache(false)
-            .dontAnimate()
+            //.dontAnimate()
             .into(view)
     }
 

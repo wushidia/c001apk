@@ -248,7 +248,7 @@ class Reply2ReplyBottomSheetDialog : BottomSheetDialogFragment(), AppListener,
                                     "feed_reply",
                                     viewModel.id.toString(),
                                     viewModel.ruid.toString(),
-                                    PrefManager.uid.toString(),
+                                    PrefManager.uid,
                                     viewModel.id.toString(),
                                     URLDecoder.decode(PrefManager.username, "UTF-8"),
                                     viewModel.uname.toString(),
@@ -305,6 +305,25 @@ class Reply2ReplyBottomSheetDialog : BottomSheetDialogFragment(), AppListener,
             override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
                 super.onScrollStateChanged(recyclerView, newState)
                 if (newState == RecyclerView.SCROLL_STATE_IDLE) {
+
+                    if (viewModel.replyTotalList.isNotEmpty() && !viewModel.isEnd)
+                        if (resources.configuration.orientation == Configuration.ORIENTATION_PORTRAIT) {
+                            viewModel.lastVisibleItemPosition =
+                                mLayoutManager.findLastVisibleItemPosition()
+                        } else {
+                            val result =
+                                mCheckForGapMethod.invoke(binding.recyclerView.layoutManager) as Boolean
+                            if (result)
+                                mMarkItemDecorInsetsDirtyMethod.invoke(binding.recyclerView)
+
+                            val positions = sLayoutManager.findLastVisibleItemPositions(null)
+                            for (pos in positions) {
+                                if (pos > viewModel.lastVisibleItemPosition) {
+                                    viewModel.lastVisibleItemPosition = pos
+                                }
+                            }
+                        }
+
                     if (viewModel.lastVisibleItemPosition == viewModel.replyTotalList.size
                         && !viewModel.isEnd && !viewModel.isRefreshing && !viewModel.isLoadMore
                     ) {
@@ -312,27 +331,6 @@ class Reply2ReplyBottomSheetDialog : BottomSheetDialogFragment(), AppListener,
                         loadMore()
                     }
                 }
-            }
-
-            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
-                super.onScrolled(recyclerView, dx, dy)
-                if (viewModel.replyTotalList.isNotEmpty())
-                    if (resources.configuration.orientation == Configuration.ORIENTATION_PORTRAIT) {
-                        viewModel.lastVisibleItemPosition =
-                            mLayoutManager.findLastVisibleItemPosition()
-                    } else {
-                        val result =
-                            mCheckForGapMethod.invoke(binding.recyclerView.layoutManager) as Boolean
-                        if (result)
-                            mMarkItemDecorInsetsDirtyMethod.invoke(binding.recyclerView)
-
-                        val positions = sLayoutManager.findLastVisibleItemPositions(null)
-                        for (pos in positions) {
-                            if (pos > viewModel.lastVisibleItemPosition) {
-                                viewModel.lastVisibleItemPosition = pos
-                            }
-                        }
-                    }
             }
         })
     }
@@ -387,7 +385,7 @@ class Reply2ReplyBottomSheetDialog : BottomSheetDialogFragment(), AppListener,
                     mLayoutManager
                 else sLayoutManager
             if (resources.configuration.orientation == Configuration.ORIENTATION_PORTRAIT)
-                addItemDecoration(ReplyItemDecoration(10.dp))
+                addItemDecoration(ReplyItemDecoration(requireContext(), 1))
             else
                 addItemDecoration(StaggerItemDecoration(10.dp))
         }
@@ -400,10 +398,10 @@ class Reply2ReplyBottomSheetDialog : BottomSheetDialogFragment(), AppListener,
         view.layoutParams.height = -1
         view.layoutParams.width = -1
         val behavior = BottomSheetBehavior.from(view)
-        //if (resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) {
-        behavior.halfExpandedRatio = 0.75F
-        behavior.state = BottomSheetBehavior.STATE_HALF_EXPANDED
-        //}
+        if (behavior.state != BottomSheetBehavior.STATE_EXPANDED) {
+            behavior.halfExpandedRatio = 0.75F
+            behavior.state = BottomSheetBehavior.STATE_HALF_EXPANDED
+        }
     }
 
     override fun onShowTotalReply(position: Int, uid: String, id: String, rPosition: Int?) {
