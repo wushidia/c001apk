@@ -1,7 +1,6 @@
 package com.example.c001apk.ui.fragment.feed
 
 import android.annotation.SuppressLint
-import android.content.Intent
 import android.content.res.Configuration
 import android.graphics.BitmapFactory
 import android.graphics.drawable.Drawable
@@ -10,7 +9,9 @@ import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
 import android.widget.ImageView
+import android.widget.LinearLayout
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.widget.ThemeUtils
 import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.core.graphics.ColorUtils
@@ -30,8 +31,6 @@ import com.example.c001apk.ui.fragment.BaseFragment
 import com.example.c001apk.ui.fragment.ReplyBottomSheetDialog
 import com.example.c001apk.ui.fragment.minterface.AppListener
 import com.example.c001apk.ui.fragment.minterface.IOnPublishClickListener
-import com.example.c001apk.ui.fragment.minterface.IOnShowMoreReplyContainer
-import com.example.c001apk.ui.fragment.minterface.IOnShowMoreReplyListener
 import com.example.c001apk.util.BlackListUtil
 import com.example.c001apk.util.ClipboardUtil
 import com.example.c001apk.util.DateUtils
@@ -39,7 +38,6 @@ import com.example.c001apk.util.DensityTool
 import com.example.c001apk.util.ImageUtil
 import com.example.c001apk.util.IntentUtil
 import com.example.c001apk.util.PrefManager
-import com.example.c001apk.util.RecyclerView
 import com.example.c001apk.util.ToastUtil
 import com.example.c001apk.view.OffsetLinearLayoutManager
 import com.example.c001apk.view.StaggerItemDecoration
@@ -55,12 +53,10 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.lang.reflect.Method
 import java.net.URLDecoder
 
 
-class FeedFragment : BaseFragment<FragmentFeedBinding>(), AppListener, IOnShowMoreReplyListener,
-    IOnPublishClickListener {
+class FeedFragment : BaseFragment<FragmentFeedBinding>(), AppListener, IOnPublishClickListener {
 
     private val viewModel by lazy { ViewModelProvider(requireActivity())[AppViewModel::class.java] }
     private lateinit var bottomSheetDialog: ReplyBottomSheetDialog
@@ -71,8 +67,7 @@ class FeedFragment : BaseFragment<FragmentFeedBinding>(), AppListener, IOnShowMo
         FeedFavoriteDatabase.getDatabase(requireContext()).feedFavoriteDao()
     }
     private val fabViewBehavior by lazy { HideBottomViewOnScrollBehavior<FloatingActionButton>() }
-    private lateinit var mCheckForGapMethod: Method
-    private lateinit var mMarkItemDecorInsetsDirtyMethod: Method
+    private var dialog: AlertDialog? = null
 
     @SuppressLint("SetTextI18n", "RestrictedApi", "InflateParams", "NotifyDataSetChanged")
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -95,8 +90,8 @@ class FeedFragment : BaseFragment<FragmentFeedBinding>(), AppListener, IOnShowMo
                 val reply = result.getOrNull()
                 if (reply?.message != null) {
                     viewModel.errorMessage = reply.message
-                    binding.indicator.isIndeterminate = false
-                    binding.indicator.visibility = View.GONE
+                    binding.indicator.parent.isIndeterminate = false
+                    binding.indicator.parent.visibility = View.GONE
                     viewModel.isEnd = true
                     viewModel.isLoadMore = false
                     viewModel.isRefreshing = false
@@ -145,7 +140,7 @@ class FeedFragment : BaseFragment<FragmentFeedBinding>(), AppListener, IOnShowMo
                     )
                     result.exceptionOrNull()?.printStackTrace()
                 }
-                if (viewModel.isViewReply) {
+                if (viewModel.isViewReply == true) {
                     viewModel.isViewReply = false
                     mLayoutManager.scrollToPositionWithOffset(viewModel.itemCount, 0)
                 }
@@ -164,14 +159,18 @@ class FeedFragment : BaseFragment<FragmentFeedBinding>(), AppListener, IOnShowMo
                     mAdapter.notifyDataSetChanged()
                 viewModel.isRefreshReply = false
                 viewModel.isRefreshing = false
-                binding.indicator.isIndeterminate = false
-                binding.indicator.visibility = View.GONE
+                binding.indicator.parent.isIndeterminate = false
+                binding.indicator.parent.visibility = View.GONE
                 binding.reply.visibility =
                     if (PrefManager.isLogin) View.VISIBLE
                     else View.GONE
                 viewModel.isLoadMore = false
                 viewModel.isRefreshing = false
                 binding.swipeRefresh.isRefreshing = false
+                if (dialog != null) {
+                    dialog?.dismiss()
+                    dialog = null
+                }
             }
         }
 
@@ -182,13 +181,14 @@ class FeedFragment : BaseFragment<FragmentFeedBinding>(), AppListener, IOnShowMo
                 val response = result.getOrNull()
                 if (response != null) {
                     if (response.data != null) {
-                        viewModel.feedReplyList[viewModel.likeReplyPosition - 1].likenum =
+                        viewModel.feedReplyList[viewModel.likeReplyPosition - viewModel.itemCount - 1].likenum =
                             response.data
-                        viewModel.feedReplyList[viewModel.likeReplyPosition - 1].userAction?.like =
+                        viewModel.feedReplyList[viewModel.likeReplyPosition - viewModel.itemCount - 1].userAction?.like =
                             1
-                        mAdapter.notifyItemChanged(viewModel.likeReplyPosition + 1, "like")
+                        mAdapter.notifyItemChanged(viewModel.likeReplyPosition, "like")
                     } else
-                        Toast.makeText(activity, response.message, Toast.LENGTH_SHORT).show()
+                        Toast.makeText(requireContext(), response.message, Toast.LENGTH_SHORT)
+                            .show()
                 } else {
                     result.exceptionOrNull()?.printStackTrace()
                 }
@@ -202,13 +202,14 @@ class FeedFragment : BaseFragment<FragmentFeedBinding>(), AppListener, IOnShowMo
                 val response = result.getOrNull()
                 if (response != null) {
                     if (response.data != null) {
-                        viewModel.feedReplyList[viewModel.likeReplyPosition - 1].likenum =
+                        viewModel.feedReplyList[viewModel.likeReplyPosition - viewModel.itemCount - 1].likenum =
                             response.data
-                        viewModel.feedReplyList[viewModel.likeReplyPosition - 1].userAction?.like =
+                        viewModel.feedReplyList[viewModel.likeReplyPosition - viewModel.itemCount - 1].userAction?.like =
                             0
-                        mAdapter.notifyItemChanged(viewModel.likeReplyPosition + 1, "like")
+                        mAdapter.notifyItemChanged(viewModel.likeReplyPosition, "like")
                     } else
-                        Toast.makeText(activity, response.message, Toast.LENGTH_SHORT).show()
+                        Toast.makeText(requireContext(), response.message, Toast.LENGTH_SHORT)
+                            .show()
                 } else {
                     result.exceptionOrNull()?.printStackTrace()
                 }
@@ -226,7 +227,8 @@ class FeedFragment : BaseFragment<FragmentFeedBinding>(), AppListener, IOnShowMo
                         viewModel.feedContentList[0].data?.userAction?.like = 1
                         mAdapter.notifyItemChanged(0, "like")
                     } else
-                        Toast.makeText(activity, response.message, Toast.LENGTH_SHORT).show()
+                        Toast.makeText(requireContext(), response.message, Toast.LENGTH_SHORT)
+                            .show()
                 } else {
                     result.exceptionOrNull()?.printStackTrace()
                 }
@@ -244,7 +246,8 @@ class FeedFragment : BaseFragment<FragmentFeedBinding>(), AppListener, IOnShowMo
                         viewModel.feedContentList[0].data?.userAction?.like = 0
                         mAdapter.notifyItemChanged(0, "like")
                     } else
-                        Toast.makeText(activity, response.message, Toast.LENGTH_SHORT).show()
+                        Toast.makeText(requireContext(), response.message, Toast.LENGTH_SHORT)
+                            .show()
                 } else {
                     result.exceptionOrNull()?.printStackTrace()
                 }
@@ -261,7 +264,8 @@ class FeedFragment : BaseFragment<FragmentFeedBinding>(), AppListener, IOnShowMo
                         if (response.data.messageStatus != null) {
                             bottomSheetDialog.editText.text = null
                             if (response.data.messageStatus == 1)
-                                Toast.makeText(activity, "回复成功", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(requireContext(), "回复成功", Toast.LENGTH_SHORT)
+                                    .show()
                             bottomSheetDialog.dismiss()
                             if (viewModel.type == "feed") {
                                 viewModel.feedReplyList.add(
@@ -316,7 +320,8 @@ class FeedFragment : BaseFragment<FragmentFeedBinding>(), AppListener, IOnShowMo
                             }
                         }
                     } else {
-                        Toast.makeText(activity, response.message, Toast.LENGTH_SHORT).show()
+                        Toast.makeText(requireContext(), response.message, Toast.LENGTH_SHORT)
+                            .show()
                         if (response.messageStatus == "err_request_captcha") {
                             viewModel.isGetCaptcha = true
                             viewModel.timeStamp = System.currentTimeMillis() / 1000
@@ -372,7 +377,7 @@ class FeedFragment : BaseFragment<FragmentFeedBinding>(), AppListener, IOnShowMo
                 val response = result.getOrNull()
                 response?.let {
                     if (response.data != null) {
-                        Toast.makeText(activity, response.data, Toast.LENGTH_SHORT).show()
+                        Toast.makeText(requireContext(), response.data, Toast.LENGTH_SHORT).show()
                         if (response.data == "验证通过") {
                             viewModel.isCreateFeed = true
                             bottomSheetDialog.editText.text = null
@@ -380,7 +385,8 @@ class FeedFragment : BaseFragment<FragmentFeedBinding>(), AppListener, IOnShowMo
                             //viewModel.postReply()
                         }
                     } else if (response.message != null) {
-                        Toast.makeText(activity, response.message, Toast.LENGTH_SHORT).show()
+                        Toast.makeText(requireContext(), response.message, Toast.LENGTH_SHORT)
+                            .show()
                         if (response.message == "请输入正确的图形验证码") {
                             viewModel.isGetCaptcha = true
                             viewModel.timeStamp = System.currentTimeMillis() / 1000
@@ -448,16 +454,11 @@ class FeedFragment : BaseFragment<FragmentFeedBinding>(), AppListener, IOnShowMo
                 super.onScrollStateChanged(recyclerView, newState)
                 if (newState == androidx.recyclerview.widget.RecyclerView.SCROLL_STATE_IDLE) {
 
-                    if (viewModel.feedContentList.isNotEmpty() && !viewModel.isEnd) {
+                    if (viewModel.feedContentList.isNotEmpty() && !viewModel.isEnd && isAdded) {
                         if (resources.configuration.orientation == Configuration.ORIENTATION_PORTRAIT) {
                             viewModel.lastVisibleItemPosition =
                                 mLayoutManager.findLastVisibleItemPosition()
                         } else {
-                            val result =
-                                mCheckForGapMethod.invoke(binding.recyclerView.layoutManager) as Boolean
-                            if (result)
-                                mMarkItemDecorInsetsDirtyMethod.invoke(binding.recyclerView)
-
                             val last = sLayoutManager.findLastVisibleItemPositions(null)
                             for (pos in last) {
                                 if (pos > viewModel.lastVisibleItemPosition) {
@@ -509,11 +510,6 @@ class FeedFragment : BaseFragment<FragmentFeedBinding>(), AppListener, IOnShowMo
                             }
                         }
                     } else {
-                        val result =
-                            mCheckForGapMethod.invoke(binding.recyclerView.layoutManager) as Boolean
-                        if (result)
-                            mMarkItemDecorInsetsDirtyMethod.invoke(binding.recyclerView)
-
                         val last = sLayoutManager.findLastVisibleItemPositions(null)
                         for (pos in last) {
                             if (pos > viewModel.lastVisibleItemPosition) {
@@ -549,6 +545,7 @@ class FeedFragment : BaseFragment<FragmentFeedBinding>(), AppListener, IOnShowMo
         }
     }
 
+    @SuppressLint("InflateParams")
     private fun refreshReply(listType: String) {
         viewModel.firstItem = null
         viewModel.lastItem = null
@@ -569,8 +566,17 @@ class FeedFragment : BaseFragment<FragmentFeedBinding>(), AppListener, IOnShowMo
         viewModel.isLoadMore = false
         viewModel.isNew = true
         viewModel.isRefreshReply = true
-        binding.indicator.visibility = View.VISIBLE
-        binding.indicator.isIndeterminate = true
+        dialog = MaterialAlertDialogBuilder(
+            requireContext(),
+            R.style.ThemeOverlay_MaterialAlertDialog_Rounded
+        ).apply {
+            setView(
+                LayoutInflater.from(requireContext()).inflate(R.layout.dialog_refresh, null, false)
+            )
+            setCancelable(false)
+        }.create()
+        dialog?.window?.setLayout(150.dp, LinearLayout.LayoutParams.WRAP_CONTENT)
+        dialog?.show()
         viewModel.getFeedReply()
     }
 
@@ -610,7 +616,8 @@ class FeedFragment : BaseFragment<FragmentFeedBinding>(), AppListener, IOnShowMo
 
             setOnClickListener {
                 if (PrefManager.SZLMID == "") {
-                    Toast.makeText(activity, "数字联盟ID不能为空", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(requireContext(), "数字联盟ID不能为空", Toast.LENGTH_SHORT)
+                        .show()
                 } else {
                     viewModel.rid = viewModel.id
                     viewModel.ruid = viewModel.uid
@@ -620,10 +627,10 @@ class FeedFragment : BaseFragment<FragmentFeedBinding>(), AppListener, IOnShowMo
                 }
             }
         }
-        binding.avatar1.setOnClickListener {
-            val intent = Intent(requireContext(), UserActivity::class.java)
-            intent.putExtra("id", viewModel.uid)
-            requireActivity().startActivity(intent)
+        binding.avatar.setOnClickListener {
+            IntentUtil.startActivity<UserActivity>(requireContext()) {
+                putExtra("id", viewModel.uid)
+            }
         }
         mAdapter.setListType(viewModel.listType)
         binding.replyCount.text = "共 ${viewModel.replyCount} 回复"
@@ -667,8 +674,8 @@ class FeedFragment : BaseFragment<FragmentFeedBinding>(), AppListener, IOnShowMo
     }
 
     private fun showTitleProfile() {
-        if (binding.name1.text.isNullOrEmpty()) {
-            binding.name1.text = viewModel.funame
+        if (binding.name.text.isNullOrEmpty()) {
+            binding.name.text = viewModel.funame
             binding.date.text = DateUtils.fromToday(viewModel.dateLine)
             if (!viewModel.device.isNullOrEmpty()) {
                 binding.device.text = viewModel.device
@@ -682,7 +689,7 @@ class FeedFragment : BaseFragment<FragmentFeedBinding>(), AppListener, IOnShowMo
                 )
                 binding.device.setCompoundDrawables(drawable, null, null, null)
             }
-            ImageUtil.showIMG(binding.avatar1, viewModel.avatar)
+            ImageUtil.showIMG(binding.avatar, viewModel.avatar)
         }
         binding.titleProfile.visibility = View.VISIBLE
     }
@@ -698,7 +705,7 @@ class FeedFragment : BaseFragment<FragmentFeedBinding>(), AppListener, IOnShowMo
                 0,
                 viewModel.itemCount + 2
             )
-            if (viewModel.isViewReply) {
+            if (viewModel.isViewReply == true) {
                 viewModel.isViewReply = false
                 mLayoutManager.scrollToPositionWithOffset(viewModel.itemCount, 0)
             }
@@ -720,7 +727,7 @@ class FeedFragment : BaseFragment<FragmentFeedBinding>(), AppListener, IOnShowMo
         mAdapter =
             FeedAdapter(requireContext(), viewModel.feedContentList, viewModel.feedReplyList)
         mAdapter.setAppListener(this)
-        mLayoutManager = OffsetLinearLayoutManager(activity)
+        mLayoutManager = OffsetLinearLayoutManager(requireContext())
         sLayoutManager = StaggeredGridLayoutManager(2, StaggeredGridLayoutManager.VERTICAL)
 
         if (viewModel.feedType == "feedArticle" && viewModel.itemCount == 1) {
@@ -745,13 +752,9 @@ class FeedFragment : BaseFragment<FragmentFeedBinding>(), AppListener, IOnShowMo
             }
         }
 
-        if (resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) {
+        if (resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE)
             binding.tabLayout.visibility = View.GONE
-            mCheckForGapMethod = RecyclerView.checkForGaps
-            mCheckForGapMethod.isAccessible = true
-            mMarkItemDecorInsetsDirtyMethod = RecyclerView.markItemDecorInsetsDirty
-            mMarkItemDecorInsetsDirtyMethod.isAccessible = true
-        } else
+        else
             binding.tabLayout.visibility = View.VISIBLE
         binding.recyclerView.apply {
             adapter = mAdapter
@@ -846,12 +849,12 @@ class FeedFragment : BaseFragment<FragmentFeedBinding>(), AppListener, IOnShowMo
                     }
 
                     R.id.report -> {
-                        val intent = Intent(requireContext(), WebViewActivity::class.java)
-                        intent.putExtra(
-                            "url",
-                            "https://m.coolapk.com/mp/do?c=feed&m=report&type=feed&id=${viewModel.id}"
-                        )
-                        requireContext().startActivity(intent)
+                        IntentUtil.startActivity<WebViewActivity>(requireContext()) {
+                            putExtra(
+                                "url",
+                                "https://m.coolapk.com/mp/do?c=feed&m=report&type=feed&id=${viewModel.id}"
+                            )
+                        }
                     }
 
 
@@ -929,7 +932,7 @@ class FeedFragment : BaseFragment<FragmentFeedBinding>(), AppListener, IOnShowMo
     ) {
         if (PrefManager.isLogin && !viewModel.isShowMoreReply) {
             if (PrefManager.SZLMID == "") {
-                Toast.makeText(activity, "数字联盟ID不能为空", Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireContext(), "数字联盟ID不能为空", Toast.LENGTH_SHORT).show()
             } else {
                 viewModel.rPosition = rPosition
                 viewModel.rid = id
@@ -1007,26 +1010,6 @@ class FeedFragment : BaseFragment<FragmentFeedBinding>(), AppListener, IOnShowMo
         viewModel.replyData["replyAndForward"] = replyAndForward
         viewModel.isPostReply = true
         viewModel.postReply()
-    }
-
-    override fun onShowMoreReply(position: Int, uid: String, id: String) {
-        viewModel.isShowMoreReply = true
-        var index = 0
-        for (element in viewModel.feedReplyList) {
-            if (element.id == id)
-                break
-            else
-                index++
-        }
-        val mBottomSheetDialogFragment =
-            Reply2ReplyBottomSheetDialog.newInstance(position, viewModel.uid.toString(), uid, id)
-        mBottomSheetDialogFragment.oriReply.add(viewModel.feedReplyList[index])
-        mBottomSheetDialogFragment.show(childFragmentManager, "Dialog")
-    }
-
-    override fun onResume() {
-        super.onResume()
-        IOnShowMoreReplyContainer.controller = this
     }
 
 }

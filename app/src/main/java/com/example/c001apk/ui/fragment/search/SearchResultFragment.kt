@@ -1,16 +1,12 @@
 package com.example.c001apk.ui.fragment.search
 
 import android.os.Bundle
-import android.view.Menu
-import android.view.MenuInflater
 import android.view.MenuItem
 import android.view.View
 import androidx.lifecycle.ViewModelProvider
 import androidx.viewpager2.adapter.FragmentStateAdapter
-import androidx.viewpager2.widget.ViewPager2
 import com.example.c001apk.R
 import com.example.c001apk.databinding.FragmentSearchResultBinding
-import com.example.c001apk.ui.activity.SearchActivity
 import com.example.c001apk.ui.fragment.BaseFragment
 import com.example.c001apk.ui.fragment.minterface.IOnSearchMenuClickContainer
 import com.example.c001apk.ui.fragment.minterface.IOnSearchMenuClickListener
@@ -26,6 +22,8 @@ class SearchResultFragment : BaseFragment<FragmentSearchResultBinding>(),
     private val viewModel by lazy { ViewModelProvider(this)[AppViewModel::class.java] }
     override var controller: IOnSearchMenuClickListener? = null
     override var tabController: IOnTabClickListener? = null
+    private lateinit var type: MenuItem
+    private lateinit var order: MenuItem
 
     companion object {
         @JvmStatic
@@ -56,7 +54,6 @@ class SearchResultFragment : BaseFragment<FragmentSearchResultBinding>(),
 
         initBar()
         initData()
-        initViewPagerMenu()
 
     }
 
@@ -75,83 +72,181 @@ class SearchResultFragment : BaseFragment<FragmentSearchResultBinding>(),
             setOnClickListener {
                 requireActivity().supportFragmentManager.popBackStack()
             }
+            setNavigationIcon(R.drawable.ic_back)
+            setNavigationOnClickListener {
+                requireActivity().supportFragmentManager.popBackStack()
+            }
+            inflateMenu(R.menu.search_menu)
+            type = menu.findItem(R.id.type)
+            order = menu.findItem(R.id.order)
+            menu.findItem(
+                when (viewModel.sort) {
+                    "default" -> R.id.feedDefault
+                    "hot" -> R.id.feedHot
+                    "reply" -> R.id.feedReply
+                    else -> throw IllegalArgumentException("type error")
+                }
+            )?.isChecked = true
+
+            menu.findItem(
+                when (viewModel.feedType) {
+                    "all" -> R.id.typeAll
+                    "feed" -> R.id.typeFeed
+                    "feedArticle" -> R.id.typeArticle
+                    "picture" -> R.id.typePic
+                    "comment" -> R.id.typeReply
+                    else -> throw IllegalArgumentException("type error")
+                }
+            )?.isChecked = true
+            setOnMenuItemClickListener {
+                when (it.itemId) {
+                    R.id.feedDefault -> {
+                        viewModel.sort = "default"
+                        controller?.onSearch("sort", "default", null)
+                    }
+
+                    R.id.feedHot -> {
+                        viewModel.sort = "hot"
+                        controller?.onSearch("sort", "hot", null)
+                    }
+
+                    R.id.feedReply -> {
+                        viewModel.sort = "reply"
+                        controller?.onSearch("sort", "reply", null)
+                    }
+
+                    R.id.typeAll -> {
+                        viewModel.feedType = "all"
+                        controller?.onSearch("feedType", "all", null)
+                    }
+
+                    R.id.typeFeed -> {
+                        viewModel.feedType = "feed"
+                        controller?.onSearch("feedType", "feed", null)
+                    }
+
+                    R.id.typeArticle -> {
+                        viewModel.feedType = "feedArticle"
+                        controller?.onSearch("feedType", "feedArticle", null)
+                    }
+
+                    R.id.typePic -> {
+                        viewModel.feedType = "picture"
+                        controller?.onSearch("feedType", "picture", null)
+                    }
+
+                    R.id.typeReply -> {
+                        viewModel.feedType = "comment"
+                        controller?.onSearch("feedType", "comment", null)
+                    }
+                }
+                menu.findItem(
+                    when (viewModel.sort) {
+                        "default" -> R.id.feedDefault
+                        "hot" -> R.id.feedHot
+                        "reply" -> R.id.feedReply
+                        else -> throw IllegalArgumentException("type error")
+                    }
+                )?.isChecked = true
+
+                menu.findItem(
+                    when (viewModel.feedType) {
+                        "all" -> R.id.typeAll
+                        "feed" -> R.id.typeFeed
+                        "feedArticle" -> R.id.typeArticle
+                        "picture" -> R.id.typePic
+                        "comment" -> R.id.typeReply
+                        else -> throw IllegalArgumentException("type error")
+                    }
+                )?.isChecked = true
+                return@setOnMenuItemClickListener true
+            }
         }
-        (activity as SearchActivity).setSupportActionBar(binding.toolBar)
-        (activity as SearchActivity).supportActionBar?.setDisplayHomeAsUpEnabled(true)
     }
 
     private fun initData() {
-        if (viewModel.pageType.isNullOrEmpty()) {
-            viewModel.searchTabList = arrayOf("动态", "应用", "数码", "用户", "话题")
-            viewModel.searchFragmentList.run {
-                add(
-                    SearchContentFragment.newInstance(
-                        viewModel.keyWord.toString(),
-                        "feed",
-                        null,
-                        null
-                    )
-                )
-                add(
-                    SearchContentFragment.newInstance(
-                        viewModel.keyWord.toString(),
-                        "apk",
-                        null,
-                        null
-                    )
-                )
-                add(
-                    SearchContentFragment.newInstance(
-                        viewModel.keyWord.toString(),
-                        "product",
-                        null,
-                        null
-                    )
-                )
-                add(
-                    SearchContentFragment.newInstance(
-                        viewModel.keyWord.toString(),
-                        "user",
-                        null,
-                        null
-                    )
-                )
-                add(
-                    SearchContentFragment.newInstance(
-                        viewModel.keyWord.toString(),
-                        "feedTopic",
-                        null,
-                        null
-                    )
-                )
+        viewModel.tabList =
+            if (viewModel.pageType.isNullOrEmpty())
+                arrayListOf("动态", "应用", "数码", "用户", "话题")
+            else {
+                binding.tabLayout.visibility = View.GONE
+                arrayListOf("null")
             }
-        } else {
-            binding.tabLayout.visibility = View.GONE
-            viewModel.searchTabList = arrayOf("null")
-            viewModel.searchFragmentList
-                .add(
+        initView()
+    }
+
+    private fun initView() {
+        binding.viewPager.offscreenPageLimit = viewModel.tabList.size
+        binding.viewPager.adapter = object : FragmentStateAdapter(this) {
+            override fun createFragment(position: Int) =
+                if (viewModel.pageType.isNullOrEmpty()) {
+                    when (position) {
+                        0 -> SearchContentFragment.newInstance(
+                            viewModel.keyWord.toString(),
+                            "feed",
+                            null,
+                            null
+                        )
+
+                        1 -> SearchContentFragment.newInstance(
+                            viewModel.keyWord.toString(),
+                            "apk",
+                            null,
+                            null
+                        )
+
+                        2 -> SearchContentFragment.newInstance(
+                            viewModel.keyWord.toString(),
+                            "product",
+                            null,
+                            null
+                        )
+
+                        3 -> SearchContentFragment.newInstance(
+                            viewModel.keyWord.toString(),
+                            "user",
+                            null,
+                            null
+                        )
+
+                        4 -> SearchContentFragment.newInstance(
+                            viewModel.keyWord.toString(),
+                            "feedTopic",
+                            null,
+                            null
+                        )
+
+                        else -> throw IllegalArgumentException()
+                    }
+                } else {
                     SearchContentFragment.newInstance(
                         viewModel.keyWord.toString(),
                         "feed",
                         viewModel.pageType.toString(),
                         viewModel.pageParam.toString()
                     )
-                )
-        }
-        initView()
-    }
 
-    private fun initView() {
-        binding.viewPager.offscreenPageLimit = viewModel.searchTabList.size
-        binding.viewPager.adapter = object : FragmentStateAdapter(this) {
-            override fun createFragment(position: Int) = viewModel.searchFragmentList[position]
-            override fun getItemCount() = viewModel.searchTabList.size
+                }
+
+            override fun getItemCount() = viewModel.tabList.size
         }
         TabLayoutMediator(binding.tabLayout, binding.viewPager) { tab, position ->
-            tab.text = viewModel.searchTabList[position]
+            tab.text = viewModel.tabList[position]
         }.attach()
         binding.tabLayout.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
-            override fun onTabSelected(tab: TabLayout.Tab?) {}
+            override fun onTabSelected(tab: TabLayout.Tab?) {
+                when (tab?.position) {
+                    0 -> {
+                        type.isVisible = true
+                        order.isVisible = true
+                    }
+
+                    else -> {
+                        type.isVisible = false
+                        order.isVisible = false
+                    }
+                }
+            }
 
             override fun onTabUnselected(tab: TabLayout.Tab?) {}
 
@@ -161,100 +256,5 @@ class SearchResultFragment : BaseFragment<FragmentSearchResultBinding>(),
 
         })
     }
-
-    private fun initViewPagerMenu() {
-        binding.viewPager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
-            override fun onPageScrollStateChanged(state: Int) {}
-            override fun onPageSelected(position: Int) {}
-            override fun onPageScrolled(
-                position: Int,
-                positionOffset: Float,
-                positionOffsetPixels: Int
-            ) {
-                requireActivity().invalidateOptionsMenu()
-            }
-        })
-    }
-
-    override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
-        super.onCreateOptionsMenu(menu, inflater)
-        inflater.inflate(R.menu.search_menu, menu)
-        menu.findItem(R.id.type).isVisible = binding.viewPager.currentItem == 0
-        menu.findItem(R.id.order).isVisible = binding.viewPager.currentItem == 0
-    }
-
-    override fun onPrepareOptionsMenu(menu: Menu) {
-
-        menu.findItem(
-            when (viewModel.sort) {
-                "default" -> R.id.feedDefault
-                "hot" -> R.id.feedHot
-                "reply" -> R.id.feedReply
-                else -> throw IllegalArgumentException("type error")
-            }
-        )?.isChecked = true
-
-        menu.findItem(
-            when (viewModel.feedType) {
-                "all" -> R.id.typeAll
-                "feed" -> R.id.typeFeed
-                "feedArticle" -> R.id.typeArticle
-                "picture" -> R.id.typePic
-                "comment" -> R.id.typeReply
-                else -> throw IllegalArgumentException("type error")
-            }
-        )?.isChecked = true
-
-        super.onPrepareOptionsMenu(menu)
-    }
-
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        when (item.itemId) {
-            android.R.id.home -> requireActivity().supportFragmentManager.popBackStack()
-
-            R.id.feedDefault -> {
-                viewModel.sort = "default"
-                controller?.onSearch("sort", "default", null)
-            }
-
-            R.id.feedHot -> {
-                viewModel.sort = "hot"
-                controller?.onSearch("sort", "hot", null)
-            }
-
-            R.id.feedReply -> {
-                viewModel.sort = "reply"
-                controller?.onSearch("sort", "reply", null)
-            }
-
-            R.id.typeAll -> {
-                viewModel.feedType = "all"
-                controller?.onSearch("feedType", "all", null)
-            }
-
-            R.id.typeFeed -> {
-                viewModel.feedType = "feed"
-                controller?.onSearch("feedType", "feed", null)
-            }
-
-            R.id.typeArticle -> {
-                viewModel.feedType = "feedArticle"
-                controller?.onSearch("feedType", "feedArticle", null)
-            }
-
-            R.id.typePic -> {
-                viewModel.feedType = "picture"
-                controller?.onSearch("feedType", "picture", null)
-            }
-
-            R.id.typeReply -> {
-                viewModel.feedType = "comment"
-                controller?.onSearch("feedType", "comment", null)
-            }
-
-        }
-        return super.onOptionsItemSelected(item)
-    }
-
 
 }

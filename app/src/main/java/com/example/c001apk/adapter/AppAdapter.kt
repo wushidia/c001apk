@@ -2,7 +2,6 @@ package com.example.c001apk.adapter
 
 import android.annotation.SuppressLint
 import android.content.Context
-import android.content.Intent
 import android.graphics.Color
 import android.graphics.drawable.Drawable
 import android.text.Html
@@ -44,7 +43,7 @@ import com.example.c001apk.util.BlackListUtil
 import com.example.c001apk.util.DateUtils
 import com.example.c001apk.util.HistoryUtil
 import com.example.c001apk.util.ImageUtil
-import com.example.c001apk.util.NetWorkUtil
+import com.example.c001apk.util.IntentUtil
 import com.example.c001apk.util.NetWorkUtil.openLink
 import com.example.c001apk.util.NetWorkUtil.openLinkDyh
 import com.example.c001apk.util.PrefManager
@@ -55,6 +54,7 @@ import com.example.c001apk.view.LinearItemDecoration1
 import com.example.c001apk.view.LinkTextView
 import com.example.c001apk.view.circleindicator.CircleIndicator3
 import com.example.c001apk.view.ninegridimageview.NineGridImageView
+import com.google.android.material.card.MaterialCardView
 import com.google.android.material.imageview.ShapeableImageView
 import com.google.android.material.progressindicator.CircularProgressIndicator
 
@@ -141,6 +141,10 @@ class AppAdapter(
         val linearAdapterLayout: LinearAdapterLayout = view.findViewById(R.id.linearAdapterLayout)
         val expand: ImageButton = view.findViewById(R.id.expand)
         val hotReply: TextView = view.findViewById(R.id.hotReply)
+        val forwarded: LinearLayout = view.findViewById(R.id.forwarded)
+        val forwardedMess: LinkTextView = view.findViewById(R.id.forwardedMess)
+        val forwardedPic: NineGridImageView = view.findViewById(R.id.forwardedPic)
+        var forwardedId: String? = null
     }
 
     class ImageTextScrollCardViewHolder(view: View) : RecyclerView.ViewHolder(view) {
@@ -183,6 +187,7 @@ class AppAdapter(
     }
 
     class TopicProductViewHolder(view: View) : RecyclerView.ViewHolder(view) {
+        val parent: MaterialCardView = view.findViewById(R.id.parent)
         val title: TextView = view.findViewById(R.id.title)
         val hotNum: TextView = view.findViewById(R.id.hotNum)
         val commentNum: TextView = view.findViewById(R.id.commentNum)
@@ -269,11 +274,9 @@ class AppAdapter(
                         .inflate(R.layout.item_home_feed, parent, false)
                 val viewHolder = FeedViewHolder(view)
                 viewHolder.itemView.setOnClickListener {
-                    val intent = Intent(parent.context, FeedActivity::class.java)
-                    intent.putExtra("type", viewHolder.feedType)
-                    intent.putExtra("id", viewHolder.id)
-                    intent.putExtra("uid", viewHolder.uid)
-                    intent.putExtra("uname", viewHolder.uname.text)
+                    IntentUtil.startActivity<FeedActivity>(parent.context) {
+                        putExtra("id", viewHolder.id)
+                    }
                     if (PrefManager.isRecordHistory)
                         HistoryUtil.saveHistory(
                             viewHolder.id,
@@ -284,15 +287,12 @@ class AppAdapter(
                             viewHolder.message.text.toString(),
                             viewHolder.pubDataRaw
                         )
-                    parent.context.startActivity(intent)
                 }
                 viewHolder.reply.setOnClickListener {
-                    val intent = Intent(parent.context, FeedActivity::class.java)
-                    intent.putExtra("type", viewHolder.feedType)
-                    intent.putExtra("id", viewHolder.id)
-                    intent.putExtra("uid", viewHolder.uid)
-                    intent.putExtra("uname", viewHolder.uname.text)
-                    intent.putExtra("viewReply", true)
+                    IntentUtil.startActivity<FeedActivity>(parent.context) {
+                        putExtra("id", viewHolder.id)
+                        putExtra("viewReply", true)
+                    }
                     if (PrefManager.isRecordHistory)
                         HistoryUtil.saveHistory(
                             viewHolder.id,
@@ -303,15 +303,12 @@ class AppAdapter(
                             viewHolder.message.text.toString(),
                             viewHolder.pubDataRaw
                         )
-                    parent.context.startActivity(intent)
                 }
                 viewHolder.hotReply.setOnClickListener {
-                    val intent = Intent(parent.context, FeedActivity::class.java)
-                    intent.putExtra("type", viewHolder.feedType)
-                    intent.putExtra("id", viewHolder.id)
-                    intent.putExtra("uid", viewHolder.uid)
-                    intent.putExtra("uname", viewHolder.uname.text)
-                    intent.putExtra("viewReply", true)
+                    IntentUtil.startActivity<FeedActivity>(parent.context) {
+                        putExtra("id", viewHolder.id)
+                        putExtra("viewReply", true)
+                    }
                     if (PrefManager.isRecordHistory)
                         HistoryUtil.saveHistory(
                             viewHolder.id,
@@ -322,24 +319,23 @@ class AppAdapter(
                             viewHolder.message.text.toString(),
                             viewHolder.pubDataRaw
                         )
-                    parent.context.startActivity(intent)
                 }
                 viewHolder.hotReply.setOnLongClickListener {
-                    val intent = Intent(parent.context, CopyActivity::class.java)
-                    intent.putExtra("text", viewHolder.hotReply.text.toString())
-                    parent.context.startActivity(intent)
+                    IntentUtil.startActivity<CopyActivity>(parent.context) {
+                        putExtra("text", viewHolder.hotReply.text.toString())
+                    }
                     true
                 }
                 viewHolder.itemView.setOnLongClickListener {
-                    val intent = Intent(parent.context, CopyActivity::class.java)
-                    intent.putExtra("text", viewHolder.message.text.toString())
-                    parent.context.startActivity(intent)
+                    IntentUtil.startActivity<CopyActivity>(parent.context) {
+                        putExtra("text", viewHolder.message.text.toString())
+                    }
                     true
                 }
                 viewHolder.avatar.setOnClickListener {
-                    val intent = Intent(parent.context, UserActivity::class.java)
-                    intent.putExtra("id", viewHolder.uid)
-                    parent.context.startActivity(intent)
+                    IntentUtil.startActivity<UserActivity>(parent.context) {
+                        putExtra("id", viewHolder.uid)
+                    }
                 }
                 viewHolder.like.setOnClickListener {
                     if (PrefManager.isLogin) {
@@ -356,9 +352,24 @@ class AppAdapter(
                         }
                     }
                 }
-                viewHolder.multiImage.apply {
-                    appListener = this@AppAdapter.appListener
+
+                viewHolder.multiImage.appListener = this@AppAdapter.appListener
+
+                viewHolder.forwardedPic.appListener = this@AppAdapter.appListener
+
+                viewHolder.forwarded.setOnClickListener {
+                    IntentUtil.startActivity<FeedActivity>(parent.context) {
+                        putExtra("id", viewHolder.forwardedId)
+                    }
                 }
+
+                viewHolder.forwarded.setOnLongClickListener {
+                    IntentUtil.startActivity<CopyActivity>(parent.context) {
+                        putExtra("text", viewHolder.forwardedMess.text.toString())
+                    }
+                    true
+                }
+
                 viewHolder.expand.setOnClickListener {
                     entityType = "feed"
                     fid = viewHolder.id
@@ -404,16 +415,17 @@ class AppAdapter(
                         .inflate(R.layout.item_search_user, parent, false)
                 val viewHolder = UserViewHolder(view)
                 viewHolder.itemView.setOnClickListener {
-                    val intent = Intent(parent.context, UserActivity::class.java)
-                    intent.putExtra("id", viewHolder.uid)
-                    parent.context.startActivity(intent)
+                    IntentUtil.startActivity<UserActivity>(parent.context) {
+                        putExtra("id", viewHolder.uid)
+                    }
                 }
                 viewHolder.followBtn.setOnClickListener {
-                    appListener?.onPostFollow(
-                        viewHolder.isFollow,
-                        viewHolder.uid,
-                        viewHolder.bindingAdapterPosition
-                    )
+                    if (PrefManager.isLogin)
+                        appListener?.onPostFollow(
+                            viewHolder.isFollow,
+                            viewHolder.uid,
+                            viewHolder.bindingAdapterPosition
+                        )
                 }
                 viewHolder
             }
@@ -424,12 +436,12 @@ class AppAdapter(
                         .inflate(R.layout.item_search_topic, parent, false)
                 val viewHolder = TopicProductViewHolder(view)
                 viewHolder.itemView.setOnClickListener {
-                    val intent = Intent(parent.context, TopicActivity::class.java)
-                    intent.putExtra("type", viewHolder.entityType)
-                    intent.putExtra("title", viewHolder.title.text)
-                    intent.putExtra("url", viewHolder.url)
-                    intent.putExtra("id", viewHolder.id)
-                    parent.context.startActivity(intent)
+                    IntentUtil.startActivity<TopicActivity>(parent.context) {
+                        putExtra("type", viewHolder.entityType)
+                        putExtra("title", viewHolder.title.text)
+                        putExtra("url", viewHolder.url)
+                        putExtra("id", viewHolder.id)
+                    }
                 }
                 viewHolder
             }
@@ -440,9 +452,9 @@ class AppAdapter(
                         .inflate(R.layout.item_search_topic, parent, false)
                 val viewHolder = AppViewHolder(view)
                 viewHolder.itemView.setOnClickListener {
-                    val intent = Intent(parent.context, AppActivity::class.java)
-                    intent.putExtra("id", viewHolder.apkName)
-                    parent.context.startActivity(intent)
+                    IntentUtil.startActivity<AppActivity>(parent.context) {
+                        putExtra("id", viewHolder.apkName)
+                    }
                 }
                 viewHolder
             }
@@ -453,11 +465,9 @@ class AppAdapter(
                         .inflate(R.layout.item_feed_vote, parent, false)
                 val viewHolder = FeedVoteViewHolder(view)
                 viewHolder.itemView.setOnClickListener {
-                    val intent = Intent(parent.context, FeedActivity::class.java)
-                    intent.putExtra("type", viewHolder.feedType)
-                    intent.putExtra("id", viewHolder.id)
-                    intent.putExtra("uid", viewHolder.uid)
-                    intent.putExtra("uname", viewHolder.uname.text)
+                    IntentUtil.startActivity<FeedActivity>(parent.context) {
+                        putExtra("id", viewHolder.id)
+                    }
                     if (PrefManager.isRecordHistory)
                         HistoryUtil.saveHistory(
                             viewHolder.id,
@@ -468,18 +478,17 @@ class AppAdapter(
                             viewHolder.message.text.toString(),
                             viewHolder.pubDataRaw
                         )
-                    parent.context.startActivity(intent)
                 }
                 viewHolder.itemView.setOnLongClickListener {
-                    val intent = Intent(parent.context, CopyActivity::class.java)
-                    intent.putExtra("text", viewHolder.message.text.toString())
-                    parent.context.startActivity(intent)
+                    IntentUtil.startActivity<CopyActivity>(parent.context) {
+                        putExtra("text", viewHolder.message.text.toString())
+                    }
                     true
                 }
                 viewHolder.avatar.setOnClickListener {
-                    val intent = Intent(parent.context, UserActivity::class.java)
-                    intent.putExtra("id", viewHolder.uid)
-                    parent.context.startActivity(intent)
+                    IntentUtil.startActivity<UserActivity>(parent.context) {
+                        putExtra("id", viewHolder.uid)
+                    }
                 }
                 viewHolder.expand.setOnClickListener {
                     entityType = "feed"
@@ -505,27 +514,25 @@ class AppAdapter(
                         .inflate(R.layout.item_feed_reply, parent, false)
                 val viewHolder = FeedReplyViewHolder(view)
                 viewHolder.itemView.setOnLongClickListener {
-                    val intent = Intent(parent.context, CopyActivity::class.java)
-                    intent.putExtra("text", viewHolder.message.text.toString())
-                    parent.context.startActivity(intent)
+                    IntentUtil.startActivity<CopyActivity>(parent.context) {
+                        putExtra("text", viewHolder.message.text.toString())
+                    }
                     true
                 }
                 viewHolder.avatar.setOnClickListener {
-                    val intent = Intent(parent.context, UserActivity::class.java)
-                    intent.putExtra("id", viewHolder.uid)
-                    parent.context.startActivity(intent)
+                    IntentUtil.startActivity<UserActivity>(parent.context) {
+                        putExtra("id", viewHolder.uid)
+                    }
                 }
                 viewHolder.uname.setOnClickListener {
-                    val intent = Intent(parent.context, UserActivity::class.java)
-                    intent.putExtra("id", viewHolder.uid)
-                    parent.context.startActivity(intent)
+                    IntentUtil.startActivity<UserActivity>(parent.context) {
+                        putExtra("id", viewHolder.uid)
+                    }
                 }
                 viewHolder.feed.setOnClickListener {
-                    val intent = Intent(parent.context, FeedActivity::class.java)
-                    intent.putExtra("type", "feed")
-                    intent.putExtra("id", viewHolder.feedId)
-                    intent.putExtra("uid", viewHolder.feedUid)
-                    intent.putExtra("uname", viewHolder.feedUname.text)
+                    IntentUtil.startActivity<FeedActivity>(parent.context) {
+                        putExtra("id", viewHolder.feedId)
+                    }
                     if (PrefManager.isRecordHistory)
                         HistoryUtil.saveHistory(
                             viewHolder.id,
@@ -536,7 +543,6 @@ class AppAdapter(
                             viewHolder.message.text.toString(),
                             viewHolder.pubDataRaw
                         )
-                    parent.context.startActivity(intent)
                 }
                 viewHolder.like.setOnClickListener {
                     if (PrefManager.SZLMID == "") {
@@ -592,7 +598,8 @@ class AppAdapter(
                     openLink(
                         parent.context,
                         viewHolder.url,
-                        viewHolder.uname.text.toString().replace("话题: ", "").replace("数码: ", ""))
+                        viewHolder.uname.text.toString().replace("话题: ", "").replace("数码: ", "")
+                    )
                 }
                 viewHolder
             }
@@ -787,7 +794,7 @@ class AppAdapter(
                     holder.device.setCompoundDrawables(drawable, null, null, null)
                     holder.device.visibility = View.VISIBLE
                 } else {
-                    holder.device.visibility = View.GONE
+                    holder.device.visibility = View.INVISIBLE
                 }
 
                 if (feed.message == "") {
@@ -942,7 +949,7 @@ class AppAdapter(
                     holder.device.setCompoundDrawables(drawable, null, null, null)
                     holder.device.visibility = View.VISIBLE
                 } else {
-                    holder.device.visibility = View.GONE
+                    holder.device.visibility = View.INVISIBLE
                 }
                 holder.pubDate.text = DateUtils.fromToday(feed.dateline)
 
@@ -952,7 +959,6 @@ class AppAdapter(
                     holder.message.visibility = View.VISIBLE
                     holder.message.movementMethod =
                         LinkTextView.LocalLinkMovementMethod.getInstance()
-                    holder.message.highlightColor = Color.TRANSPARENT
                     holder.message.text = SpannableStringBuilderUtil.setText(
                         mContext,
                         feed.message,
@@ -1097,6 +1103,18 @@ class AppAdapter(
 
             is TopicProductViewHolder -> {
                 val topic = dataList[position]
+                if (topic.description == "home") {
+                    holder.parent.setCardBackgroundColor(
+                        ThemeUtils.getThemeAttrColor(
+                            mContext,
+                            android.R.attr.windowBackground
+                        )
+                    )
+                } else {
+                    holder.parent.setCardBackgroundColor(
+                        mContext.getColor(R.color.home_card_background_color)
+                    )
+                }
                 holder.title.text = topic.title
                 holder.id = topic.id
                 holder.url = topic.url
@@ -1145,6 +1163,8 @@ class AppAdapter(
                         holder.followBtn.text = "已关注"
                         holder.followBtn.setTextColor(mContext.getColor(android.R.color.darker_gray))
                     }
+                    holder.followBtn.visibility = if (PrefManager.isLogin) View.VISIBLE
+                    else View.GONE
                     ImageUtil.showIMG(holder.avatar, user.userAvatar)
                 }
             }
@@ -1295,7 +1315,7 @@ class AppAdapter(
                 holder.uname.movementMethod = LinkTextView.LocalLinkMovementMethod.getInstance()
                 SpannableStringBuilderUtil.isColor = false
                 ImageUtil.showIMG(holder.avatar, feed.userAvatar)
-                if (feed.feedType == "feedArticle" || feed.feedType == "vote") {
+                if (!feed.messageTitle.isNullOrEmpty()) {
                     holder.messageTitle.visibility = View.VISIBLE
                     holder.messageTitle.text = feed.messageTitle
                 } else
@@ -1312,7 +1332,7 @@ class AppAdapter(
                     holder.device.setCompoundDrawables(drawable, null, null, null)
                     holder.device.visibility = View.VISIBLE
                 } else {
-                    holder.device.visibility = View.GONE
+                    holder.device.visibility = View.INVISIBLE
                 }
                 holder.pubDate.text = DateUtils.fromToday(feed.dateline)
                 val drawable1: Drawable = mContext.getDrawable(R.drawable.ic_date)!!
@@ -1373,7 +1393,6 @@ class AppAdapter(
                     )
 
                 holder.message.movementMethod = LinkTextView.LocalLinkMovementMethod.getInstance()
-                holder.message.highlightColor = Color.TRANSPARENT
                 holder.message.text = SpannableStringBuilderUtil.setText(
                     mContext,
                     feed.message,
@@ -1400,12 +1419,7 @@ class AppAdapter(
                             urlList.add("${feed.pic}.s.jpg")
                         else
                             for (element in feed.picArr)
-                                if ((PrefManager.imageQuality == "origin" ||
-                                            (PrefManager.imageQuality == "auto" && NetWorkUtil.isWifiConnected()))
-                                    && element.endsWith("gif")
-                                )
-                                    urlList.add(element)
-                                else urlList.add("$element.s.jpg")
+                                urlList.add("$element.s.jpg")
                         setUrlList(urlList)
                     }
                 } else {
@@ -1436,6 +1450,48 @@ class AppAdapter(
                     SpannableStringBuilderUtil.isReturn = true
                 } else
                     holder.hotReply.visibility = View.GONE
+
+                if (feed.forwardSourceFeed != null) {
+                    holder.forwardedId = feed.forwardSourceFeed.id
+                    holder.forwarded.visibility = View.VISIBLE
+                    val forwardedMess =
+                        "<a class=\"feed-link-uname\" href=\"/u/${feed.forwardSourceFeed.uid}\">@${feed.forwardSourceFeed.username}</a>: ${feed.forwardSourceFeed.message}"
+                    holder.forwardedMess.movementMethod =
+                        LinkTextView.LocalLinkMovementMethod.getInstance()
+                    holder.forwardedMess.text = SpannableStringBuilderUtil.setText(
+                        mContext,
+                        forwardedMess,
+                        (holder.forwardedMess.textSize * 1.3).toInt(),
+                        feed.forwardSourceFeed.picArr
+                    )
+                    if (!feed.forwardSourceFeed.picArr.isNullOrEmpty()) {
+                        holder.forwardedPic.visibility = View.VISIBLE
+                        if (feed.forwardSourceFeed.picArr.size == 1 || feed.forwardSourceFeed.feedType == "feedArticle") {
+                            val from = feed.forwardSourceFeed.pic.lastIndexOf("@")
+                            val middle = feed.forwardSourceFeed.pic.lastIndexOf("x")
+                            val end = feed.forwardSourceFeed.pic.lastIndexOf(".")
+                            if (from != -1 && middle != -1 && end != -1) {
+                                val width =
+                                    feed.forwardSourceFeed.pic.substring(from + 1, middle).toInt()
+                                val height =
+                                    feed.forwardSourceFeed.pic.substring(middle + 1, end).toInt()
+                                holder.forwardedPic.imgHeight = height
+                                holder.forwardedPic.imgWidth = width
+                            }
+                        }
+                        holder.forwardedPic.apply {
+                            val urlList: MutableList<String> = ArrayList()
+                            if (feed.forwardSourceFeed.feedType == "feedArticle" && imgWidth > imgHeight)
+                                urlList.add("${feed.forwardSourceFeed.pic}.s.jpg")
+                            else
+                                for (element in feed.forwardSourceFeed.picArr)
+                                    urlList.add("$element.s.jpg")
+                            setUrlList(urlList)
+                        }
+                    } else
+                        holder.forwardedPic.visibility = View.GONE
+                } else
+                    holder.forwarded.visibility = View.GONE
 
                 if (feed.targetRow?.id == null && feed.relationRows.isNullOrEmpty())
                     holder.dyhLayout.visibility = View.GONE
@@ -1624,15 +1680,15 @@ class AppAdapter(
             }
 
             R.id.report -> {
-                val intent = Intent(mContext, WebViewActivity::class.java)
-                intent.putExtra(
-                    "url",
-                    if (entityType == "feed_reply")
-                        "https://m.coolapk.com/mp/do?c=feed&m=report&type=feed_reply&id=$fid"
-                    else
-                        "https://m.coolapk.com/mp/do?c=feed&m=report&type=feed&id=$fid"
-                )
-                mContext.startActivity(intent)
+                IntentUtil.startActivity<WebViewActivity>(mContext) {
+                    putExtra(
+                        "url",
+                        if (entityType == "feed_reply")
+                            "https://m.coolapk.com/mp/do?c=feed&m=report&type=feed_reply&id=$fid"
+                        else
+                            "https://m.coolapk.com/mp/do?c=feed&m=report&type=feed&id=$fid"
+                    )
+                }
             }
 
             R.id.delete -> {

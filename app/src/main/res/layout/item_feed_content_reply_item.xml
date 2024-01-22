@@ -21,6 +21,7 @@
             android:id="@+id/avatar"
             android:layout_width="30dp"
             android:layout_height="30dp"
+            android:background="@color/cover"
             app:shapeAppearance="@style/circleImageStyle" />
 
         <TextView
@@ -53,10 +54,12 @@
 
         <ImageButton
             android:id="@+id/expand"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
             android:background="?actionBarItemBackground"
             android:src="@drawable/ic_expand_more"
+            app:layout_constraintBottom_toBottomOf="@id/uname"
+            app:layout_constraintDimensionRatio="1"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 
@@ -64,7 +67,7 @@
             android:id="@+id/message"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
+            android:layout_marginTop="5dp"
             android:clickable="true"
             android:focusable="true"
             android:lineSpacingMultiplier="1.2"

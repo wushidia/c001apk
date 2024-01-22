@@ -1,3 +1,7 @@
+import com.android.build.gradle.internal.api.ApkVariantOutputImpl
+import org.jetbrains.kotlin.konan.properties.Properties
+import java.io.ByteArrayOutputStream
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
@@ -129,6 +133,9 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
+    kotlinOptions {
+        jvmTarget = "17"
+    }
     buildFeatures {
         viewBinding = true
         buildConfig = true
@@ -187,16 +194,16 @@ dependencies {
     ksp("com.github.bumptech.glide:ksp:4.16.0")
     implementation("com.github.bumptech.glide:okhttp3-integration:4.16.0")
     implementation("androidx.lifecycle:lifecycle-extensions:2.2.0")
-    implementation("androidx.lifecycle:lifecycle-livedata-ktx:2.6.2")
-    implementation("org.mindrot:jbcrypt:0.4")
+    implementation("androidx.lifecycle:lifecycle-livedata-ktx:2.7.0")
+    implementation("org.mindrot:jbcrypt:0.4-atlassian-1")
     implementation("com.drakeet.about:about:2.5.2")
-    implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.6.2")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.7.0")
     implementation("com.google.android.flexbox:flexbox:3.0.0")
     implementation("dev.rikka.rikkax.material:material:2.7.0")
     implementation("dev.rikka.rikkax.material:material-preference:2.0.0")
     implementation("jp.wasabeef:glide-transformations:4.3.0")
     implementation("androidx.webkit:webkit:1.9.0")
-    implementation("org.jsoup:jsoup:1.17.1")
+    implementation("org.jsoup:jsoup:1.17.2")
     implementation(project(":mojito"))
     implementation(project(":SketchImageViewLoader"))
     implementation(project(":GlideImageLoader"))
@@ -204,8 +211,8 @@ dependencies {
     implementation("androidx.room:room-runtime:2.6.1")
     ksp("androidx.room:room-compiler:2.6.1")
     implementation("com.github.megatronking.stringfog:xor:5.0.0")
-    //implementation("androidx.palette:palette:1.0.0")
-//    implementation("com.microsoft.appcenter:appcenter-analytics:5.0.4")
-//    implementation("com.microsoft.appcenter:appcenter-crashes:5.0.4")
+    implementation("com.microsoft.appcenter:appcenter-analytics:5.0.4")
+    implementation("com.microsoft.appcenter:appcenter-crashes:5.0.4")
     implementation("com.github.zhaobozhen.libraries:utils:1.1.4")
+    debugImplementation("com.squareup.leakcanary:leakcanary-android:2.13")
 }

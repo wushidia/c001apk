@@ -11,6 +11,7 @@ data class HomeFeedResponse(
 ) {
 
     data class Data(
+        val forwardSourceFeed: MessageResponse.ForwardSourceFeed?,
         @SerializedName("comment_num") val commentNum: String?,
         @SerializedName("fans_num") val fansNum: String?,
         @SerializedName("target_type") val targetType: String?,
@@ -20,10 +21,12 @@ data class HomeFeedResponse(
         @SerializedName("is_open") val isOpen: Int?,
         @SerializedName("item_num") val itemNum: String?,
         @SerializedName("follow_num") val followNum: String?,
-        val description: String?,
+        var description: String?,
+        val subTitle: String?,
         val likeTime: Long?,
         @SerializedName("extra_title") val extraTitle: String?,
         @SerializedName("extra_url") val extraUrl: String?,
+        @SerializedName("extra_pic") val extraPic: String?,
         val feedTypeName: String?,
         val vote: Vote?,
         @SerializedName("message_cover") val messageCover: String?,

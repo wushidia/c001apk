@@ -1,7 +1,6 @@
 package com.example.c001apk.ui.activity
 
 import android.annotation.SuppressLint
-import android.content.Intent
 import android.content.res.Configuration
 import android.os.Bundle
 import android.text.SpannableString
@@ -26,14 +25,12 @@ import com.example.c001apk.util.CountUtil
 import com.example.c001apk.util.DateUtils
 import com.example.c001apk.util.ImageUtil
 import com.example.c001apk.util.IntentUtil
-import com.example.c001apk.util.RecyclerView.checkForGaps
-import com.example.c001apk.util.RecyclerView.markItemDecorInsetsDirty
+import com.example.c001apk.util.PrefManager
 import com.example.c001apk.util.TopicBlackListUtil
 import com.example.c001apk.view.LinearItemDecoration
 import com.example.c001apk.view.StaggerItemDecoration
 import com.example.c001apk.viewmodel.AppViewModel
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
-import java.lang.reflect.Method
 
 
 class UserActivity : BaseActivity<ActivityUserBinding>(), AppListener {
@@ -42,8 +39,6 @@ class UserActivity : BaseActivity<ActivityUserBinding>(), AppListener {
     private lateinit var mAdapter: AppAdapter
     private lateinit var mLayoutManager: LinearLayoutManager
     private lateinit var sLayoutManager: StaggeredGridLayoutManager
-    private lateinit var mCheckForGapMethod: Method
-    private lateinit var mMarkItemDecorInsetsDirtyMethod: Method
 
     @SuppressLint(
         "ResourceAsColor", "SetTextI18n", "NotifyDataSetChanged", "UseCompatLoadingForDrawables",
@@ -58,7 +53,8 @@ class UserActivity : BaseActivity<ActivityUserBinding>(), AppListener {
 
         if (!viewModel.uname.isNullOrEmpty()) {
             showUserInfo()
-            binding.followBtn.visibility = View.VISIBLE
+            binding.followBtn.visibility = if (PrefManager.isLogin) View.VISIBLE
+            else View.GONE
             binding.infoLayout.visibility = View.VISIBLE
         } else if (viewModel.errorMessage != null) {
             showErrorMessage()
@@ -92,15 +88,16 @@ class UserActivity : BaseActivity<ActivityUserBinding>(), AppListener {
         }
 
         binding.followBtn.setOnClickListener {
-            if (viewModel.followType) {
-                viewModel.postFollowUnFollow = true
-                viewModel.url = "/v6/user/unfollow"
-                viewModel.postFollowUnFollow()
-            } else {
-                viewModel.postFollowUnFollow = true
-                viewModel.url = "/v6/user/follow"
-                viewModel.postFollowUnFollow()
-            }
+            if (PrefManager.isLogin)
+                if (viewModel.followType) {
+                    viewModel.postFollowUnFollow = true
+                    viewModel.url = "/v6/user/unfollow"
+                    viewModel.postFollowUnFollow()
+                } else {
+                    viewModel.postFollowUnFollow = true
+                    viewModel.url = "/v6/user/follow"
+                    viewModel.postFollowUnFollow()
+                }
         }
 
         viewModel.userData.observe(this) { result ->
@@ -160,7 +157,7 @@ class UserActivity : BaseActivity<ActivityUserBinding>(), AppListener {
                         binding.indicator.parent.isIndeterminate = false
                         binding.indicator.parent.visibility = View.GONE
                         binding.swipeRefresh.isRefreshing = false
-                        mAdapter.notifyItemChanged(viewModel.dataList.size)
+                        mAdapter.notifyItemChanged(viewModel.feedList.size)
                         return@observe
                     } else if (!feed.data.isNullOrEmpty()) {
                         if (viewModel.isRefreshing) viewModel.feedList.clear()
@@ -202,7 +199,8 @@ class UserActivity : BaseActivity<ActivityUserBinding>(), AppListener {
                 else
                     mAdapter.notifyDataSetChanged()
                 binding.infoLayout.visibility = View.VISIBLE
-                binding.followBtn.visibility = View.VISIBLE
+                binding.followBtn.visibility = if (PrefManager.isLogin) View.VISIBLE
+                else View.GONE
                 binding.indicator.parent.isIndeterminate = false
                 binding.indicator.parent.visibility = View.GONE
                 binding.swipeRefresh.isRefreshing = false
@@ -269,6 +267,7 @@ class UserActivity : BaseActivity<ActivityUserBinding>(), AppListener {
 
     }
 
+    @SuppressLint("SetTextI18n")
     private fun showUserInfo() {
         binding.collapsingToolbar.title = viewModel.uname
         binding.collapsingToolbar.setCollapsedTitleTextColor(this.getColor(R.color.white))
@@ -276,7 +275,7 @@ class UserActivity : BaseActivity<ActivityUserBinding>(), AppListener {
         ImageUtil.showUserCover(binding.cover, viewModel.cover)
         ImageUtil.showIMG(binding.avatar, viewModel.avatar)
         binding.name.text = viewModel.uname
-        binding.uid.text = viewModel.uid
+        binding.uid.text = "uid: ${viewModel.uid}"
         binding.level.text = viewModel.level
         binding.level.visibility = View.VISIBLE
         if (viewModel.bio.isNullOrEmpty()) binding.bio.visibility = View.GONE
@@ -290,16 +289,19 @@ class UserActivity : BaseActivity<ActivityUserBinding>(), AppListener {
         } else {
             binding.followBtn.text = "已关注"
         }
-        val intent = Intent(this, FFFListActivity::class.java)
-        intent.putExtra("uid", viewModel.uid)
-        intent.putExtra("isEnable", false)
         binding.follow.setOnClickListener {
-            intent.putExtra("type", "follow")
-            startActivity(intent)
+            IntentUtil.startActivity<FFFListActivity>(this) {
+                putExtra("uid", viewModel.uid)
+                putExtra("isEnable", false)
+                putExtra("type", "follow")
+            }
         }
         binding.fans.setOnClickListener {
-            intent.putExtra("type", "fans")
-            startActivity(intent)
+            IntentUtil.startActivity<FFFListActivity>(this) {
+                putExtra("uid", viewModel.uid)
+                putExtra("isEnable", false)
+                putExtra("type", "fans")
+            }
         }
     }
 
@@ -320,11 +322,6 @@ class UserActivity : BaseActivity<ActivityUserBinding>(), AppListener {
                             viewModel.lastVisibleItemPosition =
                                 mLayoutManager.findLastVisibleItemPosition()
                         } else {
-                            val result =
-                                mCheckForGapMethod.invoke(binding.recyclerView.layoutManager) as Boolean
-                            if (result)
-                                mMarkItemDecorInsetsDirtyMethod.invoke(binding.recyclerView)
-
                             val positions = sLayoutManager.findLastVisibleItemPositions(null)
                             for (pos in positions) {
                                 if (pos > viewModel.lastVisibleItemPosition) {
@@ -400,14 +397,6 @@ class UserActivity : BaseActivity<ActivityUserBinding>(), AppListener {
         mLayoutManager = LinearLayoutManager(this)
         sLayoutManager = StaggeredGridLayoutManager(2, StaggeredGridLayoutManager.VERTICAL)
 
-        if (resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) {
-            // https://codeantenna.com/a/2NDTnG37Vg
-            mCheckForGapMethod = checkForGaps
-            mCheckForGapMethod.isAccessible = true
-            mMarkItemDecorInsetsDirtyMethod = markItemDecorInsetsDirty
-            mMarkItemDecorInsetsDirtyMethod.isAccessible = true
-        }
-
         binding.recyclerView.apply {
             adapter = mAdapter
             layoutManager =
@@ -479,11 +468,11 @@ class UserActivity : BaseActivity<ActivityUserBinding>(), AppListener {
             android.R.id.home -> finish()
 
             R.id.search -> {
-                val intent = Intent(this, SearchActivity::class.java)
-                intent.putExtra("pageType", "user")
-                intent.putExtra("pageParam", viewModel.uid)
-                intent.putExtra("title", binding.name.text)
-                startActivity(intent)
+                IntentUtil.startActivity<SearchActivity>(this) {
+                    putExtra("pageType", "user")
+                    putExtra("pageParam", viewModel.uid)
+                    putExtra("title", binding.name.text)
+                }
             }
 
             R.id.block -> {
@@ -502,12 +491,12 @@ class UserActivity : BaseActivity<ActivityUserBinding>(), AppListener {
             }
 
             R.id.report -> {
-                val intent = Intent(this, WebViewActivity::class.java)
-                intent.putExtra(
-                    "url",
-                    "https://m.coolapk.com/mp/do?c=user&m=report&id=${viewModel.uid}"
-                )
-                this.startActivity(intent)
+                IntentUtil.startActivity<WebViewActivity>(this) {
+                    putExtra(
+                        "url",
+                        "https://m.coolapk.com/mp/do?c=user&m=report&id=${viewModel.uid}"
+                    )
+                }
             }
 
         }

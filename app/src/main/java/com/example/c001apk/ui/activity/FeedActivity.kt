@@ -3,7 +3,6 @@ package com.example.c001apk.ui.activity
 import android.annotation.SuppressLint
 import android.os.Bundle
 import android.view.View
-import androidx.fragment.app.FragmentTransaction
 import androidx.lifecycle.ViewModelProvider
 import com.example.c001apk.R
 import com.example.c001apk.databinding.ActivityFeedBinding
@@ -19,12 +18,13 @@ class FeedActivity : BaseActivity<ActivityFeedBinding>() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        viewModel.type = intent.getStringExtra("type")
+        //viewModel.type = intent.getStringExtra("type")
         viewModel.id = intent.getStringExtra("id")
-        viewModel.rid = intent.getStringExtra("rid")
-        viewModel.uid = intent.getStringExtra("uid")
-        viewModel.uname = intent.getStringExtra("uname")
-        viewModel.isViewReply = intent.getBooleanExtra("viewReply", false)
+        viewModel.frid = intent.getStringExtra("rid")
+        //viewModel.uid = intent.getStringExtra("uid")
+        //viewModel.uname = intent.getStringExtra("uname")
+        if (viewModel.isViewReply == null)
+            viewModel.isViewReply = intent.getBooleanExtra("viewReply", false)
 
         binding.errorLayout.retry.setOnClickListener {
             binding.errorLayout.parent.visibility = View.GONE
@@ -108,10 +108,9 @@ class FeedActivity : BaseActivity<ActivityFeedBinding>() {
                         else -> FeedFragment()
                     }
                 )
-                .setTransition(FragmentTransaction.TRANSIT_FRAGMENT_OPEN)
+                //.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_OPEN)
                 .commit()
         }
     }
-
 
 }

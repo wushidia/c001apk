@@ -54,6 +54,9 @@ inline fun <reified T : BaseExtension> Project.setupBaseModule(crossinline block
             sourceCompatibility = JavaVersion.VERSION_17
             targetCompatibility = JavaVersion.VERSION_17
         }
+        kotlinOptions {
+            jvmTarget = "17"
+        }
         (this as T).block()
     }
 }
@@ -63,7 +66,7 @@ fun BaseExtension.kotlinOptions(block: KotlinJvmOptions.() -> Unit) {
 }
 
 dependencies {
-    implementation("org.jetbrains.kotlin:kotlin-stdlib:1.9.21")
+    implementation("org.jetbrains.kotlin:kotlin-stdlib:1.9.22")
     implementation("androidx.appcompat:appcompat:1.6.1")
     implementation("androidx.core:core-ktx:1.12.0")
     implementation("com.squareup.okhttp3:okhttp:4.12.0")

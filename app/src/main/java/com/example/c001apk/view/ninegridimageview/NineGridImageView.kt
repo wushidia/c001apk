@@ -27,8 +27,6 @@ SOFTWARE.
 
 import android.annotation.SuppressLint
 import android.content.Context
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.graphics.Color
 import android.util.AttributeSet
 import android.view.ViewGroup
@@ -42,7 +40,6 @@ import com.bumptech.glide.load.model.LazyHeaders
 import com.example.c001apk.R
 import com.example.c001apk.ui.fragment.minterface.AppListener
 import com.example.c001apk.util.ImageUtil
-import com.example.c001apk.util.NetWorkUtil
 import com.example.c001apk.util.PrefManager
 import com.example.c001apk.util.http2https
 import com.example.c001apk.view.RoundImageView
@@ -50,8 +47,6 @@ import com.google.android.material.shape.RoundedCornerTreatment
 import com.google.android.material.shape.ShapeAppearanceModel
 import net.mikaelzero.mojito.tools.Utils.dip2px
 import rikka.core.util.ResourceUtils
-import java.io.ByteArrayInputStream
-import java.io.ByteArrayOutputStream
 
 
 class NineGridImageView @JvmOverloads constructor(
@@ -230,7 +225,7 @@ class NineGridImageView @JvmOverloads constructor(
                     strokeWidth = 1.dp.toFloat()
                     strokeColor = context.getColorStateList(R.color.cover)
                     setBackgroundColor(context.getColor(R.color.cover))
-                    foreground = context.getDrawable(R.drawable.selector_bg_12_carousel)
+                    foreground = context.getDrawable(R.drawable.selector_bg_12_trans)
                     if (ResourceUtils.isNightMode(context.resources.configuration)
                         && PrefManager.isColorFilter
                     )
@@ -245,13 +240,7 @@ class NineGridImageView @JvmOverloads constructor(
                         imgWidth = replace.substring(from + 1, middle).toInt()
                         imgHeight = replace.substring(middle + 1, end).toInt()
                     }
-                    if (((((PrefManager.imageQuality == "auto"
-                                && !NetWorkUtil.isWifiConnected())
-                                || PrefManager.imageQuality == "thumbnail")
-                                || isCompress)
-                                && replace.endsWith("gif"))
-                        || imgHeight > imgWidth * 22f / 9f
-                    ) {
+                    if (replace.endsWith("gif") || imgHeight > imgWidth * 22f / 9f) {
                         labelBackground = ThemeUtils.getThemeAttrColor(
                             context,
                             rikka.preference.simplemenu.R.attr.colorPrimary
@@ -272,47 +261,12 @@ class NineGridImageView @JvmOverloads constructor(
                     )
                 Glide.with(context)
                     .load(newUrl)
+                    .error(context.getDrawable(R.drawable.load_failed))
                     .diskCacheStrategy(DiskCacheStrategy.ALL)
                     .skipMemoryCache(false)
                     .into(imageView)
             }
         }
-    }
-
-    // https://my.oschina.net/ososchina/blog/495861
-    private fun compressImage(image: Bitmap): Bitmap? {
-        val baos = ByteArrayOutputStream()
-        image.compress(Bitmap.CompressFormat.JPEG, 100, baos)
-        var options = 90
-        val length = baos.toByteArray().size / 1024
-        if (length > 5000) {
-            //重置baos即清空baos
-            baos.reset()
-            //质量压缩方法，这里100表示不压缩，把压缩后的数据存放到baos中
-            image.compress(Bitmap.CompressFormat.JPEG, 10, baos)
-        } else if (length > 4000) {
-            baos.reset()
-            image.compress(Bitmap.CompressFormat.JPEG, 20, baos)
-        } else if (length > 3000) {
-            baos.reset()
-            image.compress(Bitmap.CompressFormat.JPEG, 50, baos)
-        } else if (length > 2000) {
-            baos.reset()
-            image.compress(Bitmap.CompressFormat.JPEG, 70, baos)
-        }
-        //循环判断如果压缩后图片是否大于1M,大于继续压缩
-        while (baos.toByteArray().size / 1024 > 1024) {
-            //重置baos即清空baos
-            baos.reset()
-            //这里压缩options%，把压缩后的数据存放到baos中
-            image.compress(Bitmap.CompressFormat.JPEG, options, baos)
-            //每次都减少10
-            options -= 10
-        }
-        //把压缩后的数据baos存放到ByteArrayInputStream中
-        val isBm = ByteArrayInputStream(baos.toByteArray())
-        //把ByteArrayInputStream数据生成图片
-        return BitmapFactory.decodeStream(isBm, null, null)
     }
 
 }

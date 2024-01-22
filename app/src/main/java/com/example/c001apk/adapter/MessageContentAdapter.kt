@@ -2,7 +2,6 @@ package com.example.c001apk.adapter
 
 import android.annotation.SuppressLint
 import android.content.Context
-import android.content.Intent
 import android.graphics.drawable.Drawable
 import android.view.LayoutInflater
 import android.view.View
@@ -20,7 +19,7 @@ import com.example.c001apk.ui.activity.UserActivity
 import com.example.c001apk.ui.fragment.minterface.AppListener
 import com.example.c001apk.util.DateUtils
 import com.example.c001apk.util.ImageUtil
-import com.example.c001apk.util.NetWorkUtil
+import com.example.c001apk.util.IntentUtil
 import com.example.c001apk.util.PrefManager
 import com.example.c001apk.util.SpannableStringBuilderUtil
 import com.example.c001apk.view.LinkTextView
@@ -88,55 +87,46 @@ class MessageContentAdapter(
                     .inflate(R.layout.item_message_content, parent, false)
                 val viewHolder = MessageViewHolder(view)
                 viewHolder.uname.setOnClickListener {
-                    val intent = Intent(parent.context, UserActivity::class.java)
-                    intent.putExtra("id", viewHolder.uid)
-                    parent.context.startActivity(intent)
+                    IntentUtil.startActivity<UserActivity>(parent.context) {
+                        putExtra("id", viewHolder.uid)
+                    }
                 }
                 viewHolder.avatar.setOnClickListener {
-                    val intent = Intent(parent.context, UserActivity::class.java)
-                    intent.putExtra("id", viewHolder.uid)
-                    parent.context.startActivity(intent)
+                    IntentUtil.startActivity<UserActivity>(parent.context) {
+                        putExtra("id", viewHolder.uid)
+                    }
                 }
                 viewHolder.itemView.setOnLongClickListener {
-                    val intent = Intent(parent.context, CopyActivity::class.java)
-                    intent.putExtra("text", viewHolder.message.text.toString())
-                    parent.context.startActivity(intent)
+                    IntentUtil.startActivity<CopyActivity>(parent.context) {
+                        putExtra("text", viewHolder.message.text.toString())
+                    }
                     true
                 }
                 viewHolder.itemView.setOnClickListener {
                     if (viewHolder.entityType == "feed") {
-                        val intent = Intent(parent.context, FeedActivity::class.java)
-                        intent.putExtra("type", "feed")
-                        intent.putExtra("id", viewHolder.id)
-                        intent.putExtra("uid", viewHolder.uid)
-                        intent.putExtra("uname", viewHolder.uname.text)
-                        parent.context.startActivity(intent)
+                        IntentUtil.startActivity<FeedActivity>(parent.context) {
+                            putExtra("id", viewHolder.id)
+                        }
                     }
                 }
                 viewHolder.forward.setOnClickListener {
                     if (viewHolder.forwardEntityType == "feed") {
-                        val intent = Intent(parent.context, FeedActivity::class.java)
-                        intent.putExtra("type", "feed")
-                        intent.putExtra("id", viewHolder.forwardId)
-                        intent.putExtra("uid", viewHolder.forwardUid)
-                        intent.putExtra("uname", viewHolder.forwardUname)
-                        parent.context.startActivity(intent)
+                        IntentUtil.startActivity<FeedActivity>(parent.context) {
+                            putExtra("id", viewHolder.forwardId)
+                        }
                     }
                 }
                 viewHolder.forwardMessage.setOnClickListener {
                     if (viewHolder.forwardEntityType == "feed") {
-                        val intent = Intent(parent.context, FeedActivity::class.java)
-                        intent.putExtra("type", "feed")
-                        intent.putExtra("id", viewHolder.forwardId)
-                        intent.putExtra("uid", viewHolder.forwardUid)
-                        intent.putExtra("uname", viewHolder.forwardUname)
-                        parent.context.startActivity(intent)
+                        IntentUtil.startActivity<FeedActivity>(parent.context) {
+                            putExtra("id", viewHolder.forwardId)
+                        }
                     }
                 }
                 viewHolder.forwardMessage.setOnLongClickListener {
-                    val intent = Intent(parent.context, CopyActivity::class.java)
-                    intent.putExtra("text", viewHolder.forwardMessage.text.toString())
-                    parent.context.startActivity(intent)
+                    IntentUtil.startActivity<CopyActivity>(parent.context) {
+                        putExtra("text", viewHolder.forwardMessage.text.toString())
+                    }
                     true
                 }
                 viewHolder.like.setOnClickListener {
@@ -153,12 +143,9 @@ class MessageContentAdapter(
                     appListener = this@MessageContentAdapter.appListener
                 }
                 viewHolder.forward1.setOnClickListener {
-                    val intent = Intent(parent.context, FeedActivity::class.java)
-                    intent.putExtra("type", "feed")
-                    intent.putExtra("id", viewHolder.forwardId1)
-                    intent.putExtra("uid", viewHolder.forwardUid1)
-                    intent.putExtra("uname", viewHolder.forwardUname1.text)
-                    parent.context.startActivity(intent)
+                    IntentUtil.startActivity<FeedActivity>(parent.context) {
+                        putExtra("id", viewHolder.forwardId1)
+                    }
                 }
                 viewHolder
             }
@@ -178,9 +165,9 @@ class MessageContentAdapter(
                     .inflate(R.layout.item_search_user, parent, false)
                 val viewHolder = AppAdapter.UserViewHolder(view)
                 viewHolder.itemView.setOnClickListener {
-                    val intent = Intent(parent.context, UserActivity::class.java)
-                    intent.putExtra("id", viewHolder.uid)
-                    parent.context.startActivity(intent)
+                    IntentUtil.startActivity<UserActivity>(parent.context) {
+                        putExtra("id", viewHolder.uid)
+                    }
                 }
                 viewHolder
             }
@@ -285,7 +272,7 @@ class MessageContentAdapter(
                         holder.device.setCompoundDrawables(drawable, null, null, null)
                         holder.device.visibility = View.VISIBLE
                     } else {
-                        holder.device.visibility = View.GONE
+                        holder.device.visibility = View.INVISIBLE
                     }
                     holder.pubDate.text = DateUtils.fromToday(message.dateline)
                     val drawable1: Drawable = mContext.getDrawable(R.drawable.ic_date)!!
@@ -407,12 +394,7 @@ class MessageContentAdapter(
                         holder.multiImage.apply {
                             val urlList: MutableList<String> = ArrayList()
                             for (element in message.forwardSourceFeed.picArr)
-                                if ((PrefManager.imageQuality == "origin" ||
-                                            (PrefManager.imageQuality == "auto" && NetWorkUtil.isWifiConnected()))
-                                    && element.endsWith("gif")
-                                )
-                                    urlList.add(element)
-                                else urlList.add("$element.s.jpg")
+                                urlList.add("$element.s.jpg")
                             setUrlList(urlList)
                         }
                     } else {

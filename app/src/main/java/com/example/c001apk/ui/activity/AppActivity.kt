@@ -6,12 +6,10 @@ import android.content.Intent
 import android.graphics.Color
 import android.net.Uri
 import android.os.Bundle
-import android.util.Log
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
 import android.widget.Toast
-import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import com.example.c001apk.R
@@ -21,8 +19,11 @@ import com.example.c001apk.ui.fragment.minterface.IOnTabClickContainer
 import com.example.c001apk.ui.fragment.minterface.IOnTabClickListener
 import com.example.c001apk.util.DateUtils
 import com.example.c001apk.util.ImageUtil
+import com.example.c001apk.util.IntentUtil
 import com.example.c001apk.util.PrefManager
+import com.example.c001apk.util.TopicBlackListUtil
 import com.example.c001apk.viewmodel.AppViewModel
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.tabs.TabLayout
 import com.google.android.material.tabs.TabLayout.OnTabSelectedListener
 import com.google.android.material.tabs.TabLayoutMediator
@@ -89,11 +90,6 @@ class AppActivity : BaseActivity<ActivityAppBinding>(), IOnTabClickContainer {
                             add("最新发布")
                             add("热度排序")
                         }
-                        viewModel.fragmentList.apply {
-                            add(AppFragment.newInstance("reply", viewModel.id.toString()))
-                            add(AppFragment.newInstance("pub", viewModel.id.toString()))
-                            add(AppFragment.newInstance("hot", viewModel.id.toString()))
-                        }
                         initView()
                     } else {
                         viewModel.errorMessage = appInfo.data.commentStatusText
@@ -135,7 +131,14 @@ class AppActivity : BaseActivity<ActivityAppBinding>(), IOnTabClickContainer {
     private fun initView() {
         binding.viewPager.offscreenPageLimit = viewModel.tabList.size
         binding.viewPager.adapter = object : FragmentStateAdapter(this) {
-            override fun createFragment(position: Int): Fragment = viewModel.fragmentList[position]
+            override fun createFragment(position: Int) =
+                when (position) {
+                    0 -> AppFragment.newInstance("reply", viewModel.id.toString())
+                    1 -> AppFragment.newInstance("pub", viewModel.id.toString())
+                    2 -> AppFragment.newInstance("hot", viewModel.id.toString())
+                    else -> throw IllegalArgumentException()
+                }
+
             override fun getItemCount() = viewModel.tabList.size
         }
         TabLayoutMediator(binding.tabLayout, binding.viewPager) { tab, position ->
@@ -169,24 +172,34 @@ class AppActivity : BaseActivity<ActivityAppBinding>(), IOnTabClickContainer {
         binding.collapsingToolbar.setExpandedTitleColor(Color.TRANSPARENT)
         ImageUtil.showIMG(binding.logo, viewModel.logo)
         if (viewModel.type == "apk")
-            viewModel.getDownloadLink()
+            binding.btnDownload.visibility = View.VISIBLE
+        binding.btnDownload.setOnClickListener {
+            if (viewModel.collectionUrl.isNullOrEmpty()) {
+                viewModel.isNew = true
+                viewModel.getDownloadLink()
+            } else
+                downloadApp()
+        }
         viewModel.downloadLinkData.observe(this@AppActivity) { result ->
-            val link = result.getOrNull()
-            if (link != null) {
-                binding.btnDownload.visibility = View.VISIBLE
-                viewModel.collectionUrl = link
-            } else {
-                result.exceptionOrNull()?.printStackTrace()
+            if (viewModel.isNew) {
+                viewModel.isNew = false
+                val link = result.getOrNull()
+                if (!link.isNullOrEmpty()) {
+                    viewModel.collectionUrl = link
+                    downloadApp()
+                } else {
+                    result.exceptionOrNull()?.printStackTrace()
+                }
             }
         }
-        binding.btnDownload.setOnClickListener {
-            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(viewModel.collectionUrl))
-            try {
-                startActivity(intent)
-            } catch (e: ActivityNotFoundException) {
-                Toast.makeText(this@AppActivity, "打开失败", Toast.LENGTH_SHORT).show()
-                Log.w("error", "Activity was not found for intent, $intent")
-            }
+    }
+
+    private fun downloadApp() {
+        try {
+            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(viewModel.collectionUrl)))
+        } catch (e: ActivityNotFoundException) {
+            Toast.makeText(this@AppActivity, "下载失败", Toast.LENGTH_SHORT).show()
+            e.printStackTrace()
         }
     }
 
@@ -237,11 +250,11 @@ class AppActivity : BaseActivity<ActivityAppBinding>(), IOnTabClickContainer {
                 if (viewModel.appId.isNullOrEmpty() || viewModel.title.isNullOrEmpty()) {
                     Toast.makeText(this, "加载中...", Toast.LENGTH_SHORT).show()
                 } else {
-                    val intent = Intent(this, SearchActivity::class.java)
-                    intent.putExtra("pageType", "apk")
-                    intent.putExtra("pageParam", viewModel.appId)
-                    intent.putExtra("title", viewModel.title)
-                    startActivity(intent)
+                    IntentUtil.startActivity<SearchActivity>(this) {
+                        putExtra("pageType", "apk")
+                        putExtra("pageParam", viewModel.appId)
+                        putExtra("title", viewModel.title)
+                    }
                 }
             }
 
@@ -251,6 +264,21 @@ class AppActivity : BaseActivity<ActivityAppBinding>(), IOnTabClickContainer {
                 else "/v6/apk/follow"
                 viewModel.fid = viewModel.appId
                 viewModel.getFollow()
+            }
+
+            R.id.block -> {
+                MaterialAlertDialogBuilder(this).apply {
+                    val title =
+                        if (viewModel.type == "topic") viewModel.url.toString()
+                            .replace("/t/", "")
+                        else viewModel.title
+                    setTitle("确定将 $title 加入黑名单？")
+                    setNegativeButton(android.R.string.cancel, null)
+                    setPositiveButton(android.R.string.ok) { _, _ ->
+                        TopicBlackListUtil.saveTopic(viewModel.title.toString())
+                    }
+                    show()
+                }
             }
         }
         return true

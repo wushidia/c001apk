@@ -7,7 +7,6 @@ import android.view.MenuItem
 import android.view.View
 import android.widget.Toast
 import androidx.appcompat.widget.ThemeUtils
-import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -21,14 +20,11 @@ import com.example.c001apk.ui.fragment.FollowFragment
 import com.example.c001apk.ui.fragment.minterface.AppListener
 import com.example.c001apk.util.BlackListUtil
 import com.example.c001apk.util.PrefManager
-import com.example.c001apk.util.RecyclerView.checkForGaps
-import com.example.c001apk.util.RecyclerView.markItemDecorInsetsDirty
 import com.example.c001apk.util.TopicBlackListUtil
 import com.example.c001apk.view.LinearItemDecoration
 import com.example.c001apk.view.StaggerItemDecoration
 import com.example.c001apk.viewmodel.AppViewModel
 import com.google.android.material.tabs.TabLayoutMediator
-import java.lang.reflect.Method
 
 class FFFListActivity : BaseActivity<ActivityFfflistBinding>(), AppListener {
 
@@ -36,8 +32,6 @@ class FFFListActivity : BaseActivity<ActivityFfflistBinding>(), AppListener {
     private lateinit var mAdapter: AppAdapter
     private lateinit var mLayoutManager: LinearLayoutManager
     private lateinit var sLayoutManager: StaggeredGridLayoutManager
-    private lateinit var mCheckForGapMethod: Method
-    private lateinit var mMarkItemDecorInsetsDirtyMethod: Method
 
     @SuppressLint("NotifyDataSetChanged")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -60,26 +54,13 @@ class FFFListActivity : BaseActivity<ActivityFfflistBinding>(), AppListener {
                         add("话题")
                         add("数码")
                         add("应用")
-                        //add("收藏")
-                    }
-                    viewModel.fragmentList.apply {
-                        add(FollowFragment.newInstance("follow"))
-                        add(FollowFragment.newInstance("topic"))
-                        add(FollowFragment.newInstance("product"))
-                        add(FollowFragment.newInstance("apk"))
-                        //add(FollowFragment.newInstance("favorite"))
                     }
                 } else if (viewModel.type == "reply") {
                     viewModel.tabList.apply {
                         add("我的回复")
                         add("我收到的回复")
                     }
-                    viewModel.fragmentList.apply {
-                        add(FollowFragment.newInstance("reply"))
-                        add(FollowFragment.newInstance("replyToMe"))
-                    }
                 }
-
             }
             initViewPager()
         } else {
@@ -263,9 +244,22 @@ class FFFListActivity : BaseActivity<ActivityFfflistBinding>(), AppListener {
     private fun initViewPager() {
         binding.viewPager.offscreenPageLimit = viewModel.tabList.size
         binding.viewPager.adapter = object : FragmentStateAdapter(this) {
-            override fun createFragment(position: Int): Fragment {
-                return viewModel.fragmentList[position]
-            }
+            override fun createFragment(position: Int) =
+                if (viewModel.type == "follow") {
+                    when (position) {
+                        0 -> FollowFragment.newInstance("follow")
+                        1 -> FollowFragment.newInstance("topic")
+                        2 -> FollowFragment.newInstance("product")
+                        3 -> FollowFragment.newInstance("apk")
+                        else -> throw IllegalArgumentException()
+                    }
+                } else {
+                    when (position) {
+                        0 -> FollowFragment.newInstance("reply")
+                        1 -> FollowFragment.newInstance("replyToMe")
+                        else -> throw IllegalArgumentException()
+                    }
+                }
 
             override fun getItemCount() = viewModel.tabList.size
 
@@ -325,11 +319,6 @@ class FFFListActivity : BaseActivity<ActivityFfflistBinding>(), AppListener {
                             viewModel.lastVisibleItemPosition =
                                 mLayoutManager.findLastVisibleItemPosition()
                         } else {
-                            val result =
-                                mCheckForGapMethod.invoke(binding.recyclerView.layoutManager) as Boolean
-                            if (result)
-                                mMarkItemDecorInsetsDirtyMethod.invoke(binding.recyclerView)
-
                             val positions = sLayoutManager.findLastVisibleItemPositions(null)
                             for (pos in positions) {
                                 if (pos > viewModel.lastVisibleItemPosition) {
@@ -390,13 +379,6 @@ class FFFListActivity : BaseActivity<ActivityFfflistBinding>(), AppListener {
         mLayoutManager = LinearLayoutManager(this)
         sLayoutManager = StaggeredGridLayoutManager(2, StaggeredGridLayoutManager.VERTICAL)
 
-        if (resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE) {
-            // https://codeantenna.com/a/2NDTnG37Vg
-            mCheckForGapMethod = checkForGaps
-            mCheckForGapMethod.isAccessible = true
-            mMarkItemDecorInsetsDirtyMethod = markItemDecorInsetsDirty
-            mMarkItemDecorInsetsDirtyMethod.isAccessible = true
-        }
         binding.recyclerView.apply {
             adapter = mAdapter
             layoutManager =

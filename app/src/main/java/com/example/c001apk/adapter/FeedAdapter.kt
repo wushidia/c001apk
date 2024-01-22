@@ -2,7 +2,7 @@ package com.example.c001apk.adapter
 
 import android.annotation.SuppressLint
 import android.content.Context
-import android.content.Intent
+import android.graphics.Color
 import android.graphics.drawable.Drawable
 import android.text.method.LinkMovementMethod
 import android.view.LayoutInflater
@@ -31,13 +31,14 @@ import com.example.c001apk.logic.model.FeedArticleContentBean
 import com.example.c001apk.logic.model.FeedContentResponse
 import com.example.c001apk.logic.model.TotalReplyResponse
 import com.example.c001apk.ui.activity.CopyActivity
+import com.example.c001apk.ui.activity.FeedActivity
 import com.example.c001apk.ui.activity.UserActivity
 import com.example.c001apk.ui.activity.WebViewActivity
 import com.example.c001apk.ui.fragment.minterface.AppListener
 import com.example.c001apk.util.BlackListUtil
 import com.example.c001apk.util.DateUtils
 import com.example.c001apk.util.ImageUtil
-import com.example.c001apk.util.NetWorkUtil
+import com.example.c001apk.util.IntentUtil
 import com.example.c001apk.util.NetWorkUtil.openLink
 import com.example.c001apk.util.NetWorkUtil.openLinkDyh
 import com.example.c001apk.util.PrefManager
@@ -110,15 +111,13 @@ class FeedAdapter(
     }
 
     class ImageViewHolder(view: View) : RecyclerView.ViewHolder(view) {
-        val imageView: NineGridImageView =
-            view.findViewById(R.id.imageView)
+        val imageView: NineGridImageView = view.findViewById(R.id.imageView)
         val description: TextView = view.findViewById(R.id.description)
     }
 
     class UrlViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         var url = ""
-        val shareUrl: MaterialCardView =
-            view.findViewById(R.id.shareUrl)
+        val shareUrl: MaterialCardView = view.findViewById(R.id.shareUrl)
         val urlTitle: TextView = view.findViewById(R.id.urlTitle)
     }
 
@@ -174,8 +173,13 @@ class FeedAdapter(
         val rightOption: Button = view.findViewById(R.id.rightOption)
         val voteOptions: LinearAdapterLayout = view.findViewById(R.id.voteOptions)
         val extraUrlLayout: ConstraintLayout = view.findViewById(R.id.extraUrlLayout)
+        val extraPic: ShapeableImageView = view.findViewById(R.id.extraPic)
         val extraTitle: TextView = view.findViewById(R.id.extraTitle)
         val extraUrl: TextView = view.findViewById(R.id.extraUrl)
+        val forwarded: LinearLayout = view.findViewById(R.id.forwarded)
+        val forwardedMess: LinkTextView = view.findViewById(R.id.forwardedMess)
+        val forwardedPic: NineGridImageView = view.findViewById(R.id.forwardedPic)
+        var forwardedId: String? = null
     }
 
     class TopViewHolder(view: View) : RecyclerView.ViewHolder(view) {
@@ -208,9 +212,9 @@ class FeedAdapter(
                         .inflate(R.layout.item_feed_article_content_item, parent, false)
                 val viewHolder = TextViewHolder(view)
                 viewHolder.textView.setOnLongClickListener {
-                    val intent = Intent(parent.context, CopyActivity::class.java)
-                    intent.putExtra("text", viewHolder.textView.text.toString())
-                    parent.context.startActivity(intent)
+                    IntentUtil.startActivity<CopyActivity>(parent.context) {
+                        putExtra("text", viewHolder.textView.text.toString())
+                    }
                     true
                 }
                 viewHolder
@@ -252,14 +256,14 @@ class FeedAdapter(
                     )
                 }
                 viewHolder.avatar.setOnClickListener {
-                    val intent = Intent(parent.context, UserActivity::class.java)
-                    intent.putExtra("id", viewHolder.uid)
-                    parent.context.startActivity(intent)
+                    IntentUtil.startActivity<UserActivity>(parent.context) {
+                        putExtra("id", viewHolder.uid)
+                    }
                 }
                 viewHolder.itemView.setOnLongClickListener {
-                    val intent = Intent(parent.context, CopyActivity::class.java)
-                    intent.putExtra("text", viewHolder.message.text.toString())
-                    parent.context.startActivity(intent)
+                    IntentUtil.startActivity<CopyActivity>(parent.context) {
+                        putExtra("text", viewHolder.message.text.toString())
+                    }
                     true
                 }
                 viewHolder.itemView.setOnClickListener {
@@ -282,7 +286,7 @@ class FeedAdapter(
                                 "reply",
                                 viewHolder.isLike,
                                 viewHolder.id,
-                                viewHolder.bindingAdapterPosition - 1
+                                viewHolder.bindingAdapterPosition
                             )
                         }
                     }
@@ -332,15 +336,15 @@ class FeedAdapter(
                     .inflate(R.layout.item_feed_content, parent, false)
                 val viewHolder = FeedContentViewHolder(view)
                 viewHolder.itemView.setOnLongClickListener {
-                    val intent = Intent(parent.context, CopyActivity::class.java)
-                    intent.putExtra("text", viewHolder.message.text.toString())
-                    parent.context.startActivity(intent)
+                    IntentUtil.startActivity<CopyActivity>(parent.context) {
+                        putExtra("text", viewHolder.message.text.toString())
+                    }
                     true
                 }
                 viewHolder.avatar.setOnClickListener {
-                    val intent = Intent(parent.context, UserActivity::class.java)
-                    intent.putExtra("id", viewHolder.uid)
-                    parent.context.startActivity(intent)
+                    IntentUtil.startActivity<UserActivity>(parent.context) {
+                        putExtra("id", viewHolder.uid)
+                    }
                 }
                 viewHolder.like.setOnClickListener {
                     if (PrefManager.isLogin) {
@@ -357,9 +361,24 @@ class FeedAdapter(
                         }
                     }
                 }
-                viewHolder.multiImage.apply {
-                    appListener = this@FeedAdapter.appListener
+
+                viewHolder.multiImage.appListener = this@FeedAdapter.appListener
+
+                viewHolder.forwardedPic.appListener = this@FeedAdapter.appListener
+
+                viewHolder.forwarded.setOnClickListener {
+                    IntentUtil.startActivity<FeedActivity>(parent.context) {
+                        putExtra("id", viewHolder.forwardedId)
+                    }
                 }
+
+                viewHolder.forwarded.setOnLongClickListener {
+                    IntentUtil.startActivity<CopyActivity>(parent.context) {
+                        putExtra("text", viewHolder.forwardedMess.text.toString())
+                    }
+                    true
+                }
+
                 viewHolder.follow.visibility =
                     if (PrefManager.isLogin) View.VISIBLE
                     else View.GONE
@@ -463,7 +482,96 @@ class FeedAdapter(
         }
     }
 
-    @SuppressLint("SetTextI18n", "RestrictedApi")
+    @SuppressLint("RestrictedApi")
+    override fun onBindViewHolder(
+        holder: RecyclerView.ViewHolder,
+        position: Int,
+        payloads: MutableList<Any>
+    ) {
+        if (payloads.isEmpty()) {
+            onBindViewHolder(holder, position)
+        } else {
+            when (getItemViewType(position)) {
+
+                5 -> {
+                    if (payloads[0] == "like") {
+                        (holder as FeedContentViewHolder).like.text = feedList[0].data?.likenum
+                        holder.isLike = feedList[0].data?.userAction?.like == 1
+                        val drawableLike: Drawable = mContext.getDrawable(R.drawable.ic_like)!!
+                        drawableLike.setBounds(
+                            0,
+                            0,
+                            holder.like.textSize.toInt(),
+                            holder.like.textSize.toInt()
+                        )
+                        if (feedList[0].data?.userAction?.like == 1) {
+                            DrawableCompat.setTint(
+                                drawableLike,
+                                ThemeUtils.getThemeAttrColor(
+                                    mContext,
+                                    rikka.preference.simplemenu.R.attr.colorPrimary
+                                )
+                            )
+                            holder.like.setTextColor(
+                                ThemeUtils.getThemeAttrColor(
+                                    mContext,
+                                    rikka.preference.simplemenu.R.attr.colorPrimary
+                                )
+                            )
+                        } else {
+                            DrawableCompat.setTint(
+                                drawableLike,
+                                mContext.getColor(android.R.color.darker_gray)
+                            )
+                            holder.like.setTextColor(mContext.getColor(android.R.color.darker_gray))
+                        }
+                        holder.like.setCompoundDrawables(drawableLike, null, null, null)
+                    }
+                }
+
+                3 -> {
+                    if (payloads[0] == "like") {
+                        val index =
+                            if (feedList[0].data?.feedType == "feedArticle") position - articleList.size - 1
+                            else position - 2
+                        (holder as FeedContentReplyViewHolder).like.text = replyList[index].likenum
+                        holder.isLike = replyList[index].userAction?.like == 1
+                        val drawableLike: Drawable = mContext.getDrawable(R.drawable.ic_like)!!
+                        drawableLike.setBounds(
+                            0,
+                            0,
+                            holder.like.textSize.toInt(),
+                            holder.like.textSize.toInt()
+                        )
+                        if (replyList[index].userAction?.like == 1) {
+                            DrawableCompat.setTint(
+                                drawableLike,
+                                ThemeUtils.getThemeAttrColor(
+                                    mContext,
+                                    rikka.preference.simplemenu.R.attr.colorPrimary
+                                )
+                            )
+                            holder.like.setTextColor(
+                                ThemeUtils.getThemeAttrColor(
+                                    mContext,
+                                    rikka.preference.simplemenu.R.attr.colorPrimary
+                                )
+                            )
+                        } else {
+                            DrawableCompat.setTint(
+                                drawableLike,
+                                mContext.getColor(android.R.color.darker_gray)
+                            )
+                            holder.like.setTextColor(mContext.getColor(android.R.color.darker_gray))
+                        }
+                        holder.like.setCompoundDrawables(drawableLike, null, null, null)
+                    }
+                }
+            }
+        }
+    }
+
+    @SuppressLint("SetTextI18n", "RestrictedApi", "ResourceAsColor")
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
         when (holder) {
 
@@ -571,6 +679,21 @@ class FeedAdapter(
                             feed.data.extraTitle?.let {
                                 holder.extraTitle.text = it
                             }
+                            if (!feed.data.extraPic.isNullOrEmpty()) {
+                                ImageUtil.showIMG(holder.extraPic, feed.data.extraPic)
+                            } else {
+                                holder.extraPic.apply {
+                                    setBackgroundColor(
+                                        ThemeUtils.getThemeAttrColor(
+                                            mContext,
+                                            rikka.preference.simplemenu.R.attr.colorPrimary
+                                        )
+                                    )
+                                    val link = mContext.getDrawable(R.drawable.ic_link)
+                                    link!!.setTint(mContext.getColor(R.color.wb))
+                                    setImageDrawable(link)
+                                }
+                            }
                         }
                     } else holder.extraUrlLayout.visibility = View.GONE
 
@@ -662,6 +785,50 @@ class FeedAdapter(
                         )
                     }
 
+                    if (feed.data?.forwardSourceFeed != null) {
+                        holder.forwardedId = feed.data.forwardSourceFeed.id
+                        holder.forwarded.visibility = View.VISIBLE
+                        val forwardedMess =
+                            "<a class=\"feed-link-uname\" href=\"/u/${feed.data.forwardSourceFeed.uid}\">@${feed.data.forwardSourceFeed.username}</a>: ${feed.data.forwardSourceFeed.message}"
+                        holder.forwardedMess.movementMethod =
+                            LinkTextView.LocalLinkMovementMethod.getInstance()
+                        holder.forwardedMess.text = SpannableStringBuilderUtil.setText(
+                            mContext,
+                            forwardedMess,
+                            (holder.forwardedMess.textSize * 1.3).toInt(),
+                            feed.data.forwardSourceFeed.picArr
+                        )
+                        if (!feed.data.forwardSourceFeed.picArr.isNullOrEmpty()) {
+                            holder.forwardedPic.visibility = View.VISIBLE
+                            if (feed.data.forwardSourceFeed.picArr.size == 1 || feed.data.forwardSourceFeed.feedType == "feedArticle") {
+                                val from = feed.data.forwardSourceFeed.pic.lastIndexOf("@")
+                                val middle = feed.data.forwardSourceFeed.pic.lastIndexOf("x")
+                                val end = feed.data.forwardSourceFeed.pic.lastIndexOf(".")
+                                if (from != -1 && middle != -1 && end != -1) {
+                                    val width =
+                                        feed.data.forwardSourceFeed.pic.substring(from + 1, middle)
+                                            .toInt()
+                                    val height =
+                                        feed.data.forwardSourceFeed.pic.substring(middle + 1, end)
+                                            .toInt()
+                                    holder.forwardedPic.imgHeight = height
+                                    holder.forwardedPic.imgWidth = width
+                                }
+                            }
+                            holder.forwardedPic.apply {
+                                val urlList: MutableList<String> = ArrayList()
+                                if (feed.data.forwardSourceFeed.feedType == "feedArticle" && imgWidth > imgHeight)
+                                    urlList.add("${feed.data.forwardSourceFeed.pic}.s.jpg")
+                                else
+                                    for (element in feed.data.forwardSourceFeed.picArr)
+                                        urlList.add("$element.s.jpg")
+                                setUrlList(urlList)
+                            }
+                        } else
+                            holder.forwardedPic.visibility = View.GONE
+                    } else
+                        holder.forwarded.visibility = View.GONE
+
                     if (!feed.data?.picArr.isNullOrEmpty()) {
                         holder.multiImage.visibility = View.VISIBLE
                         if (feed.data?.picArr?.size == 1) {
@@ -678,12 +845,7 @@ class FeedAdapter(
                         holder.multiImage.apply {
                             val urlList: MutableList<String> = ArrayList()
                             for (element in feed.data?.picArr!!)
-                                if ((PrefManager.imageQuality == "origin" ||
-                                            (PrefManager.imageQuality == "auto" && NetWorkUtil.isWifiConnected()))
-                                    && element.endsWith("gif")
-                                )
-                                    urlList.add(element)
-                                else urlList.add("$element.s.jpg")
+                                urlList.add("$element.s.jpg")
                             setUrlList(urlList)
                         }
                     } else {
@@ -867,8 +1029,8 @@ class FeedAdapter(
             is TextViewHolder -> {
                 val item = articleList[position]
                 holder.textView.visibility = View.VISIBLE
-                holder.textView.movementMethod =
-                    LinkMovementMethod.getInstance()
+                holder.textView.highlightColor = Color.TRANSPARENT
+                holder.textView.movementMethod = LinkMovementMethod.getInstance()
                 holder.textView.text = SpannableStringBuilderUtil.setText(
                     mContext,
                     item.message.toString(),
@@ -884,17 +1046,12 @@ class FeedAdapter(
                 holder.imageView.visibility = View.VISIBLE
                 val urlList = ArrayList<String>()
                 urlList.add("${item.url}.s.jpg")
-                val from =
-                    item.url!!.lastIndexOf("@")
-                val middle =
-                    item.url.lastIndexOf("x")
-                val end =
-                    item.url.lastIndexOf(".")
+                val from = item.url!!.lastIndexOf("@")
+                val middle = item.url.lastIndexOf("x")
+                val end = item.url.lastIndexOf(".")
                 if (from != -1 && middle != -1 && end != -1) {
-                    val width =
-                        item.url.substring(from + 1, middle).toInt()
-                    val height =
-                        item.url.substring(middle + 1, end).toInt()
+                    val width = item.url.substring(from + 1, middle).toInt()
+                    val height = item.url.substring(middle + 1, end).toInt()
                     holder.imageView.imgHeight = height
                     holder.imageView.imgWidth = width
                 }
@@ -925,10 +1082,10 @@ class FeedAdapter(
                     holder.itemView.also {
                         if (it.layoutParams is StaggeredGridLayoutManager.LayoutParams) {
                             it.background = mContext.getDrawable(R.drawable.text_card_bg)
-                            it.foreground = mContext.getDrawable(R.drawable.selector_bg_12_carousel)
+                            it.foreground = mContext.getDrawable(R.drawable.selector_bg_12_trans)
                             holder.replyLayout.setCardBackgroundColor(mContext.getColor(R.color.reply2reply_card_background_color))
                         } else {
-                            it.foreground = mContext.getDrawable(R.drawable.selector_bg_carousel)
+                            it.foreground = mContext.getDrawable(R.drawable.selector_bg_trans)
                             holder.replyLayout.setCardBackgroundColor(mContext.getColor(R.color.home_card_background_color))
                         }
                     }
@@ -1137,8 +1294,7 @@ class FeedAdapter(
                                         id = replyData.id
                                         uid = replyData.uid
                                         ruid = reply.uid
-                                        this@FeedAdapter.position =
-                                            holder.bindingAdapterPosition
+                                        this@FeedAdapter.position = holder.bindingAdapterPosition
                                         this@FeedAdapter.rPosition = position1
                                         val popup = PopupMenu(mContext, it)
                                         val inflater = popup.menuInflater
@@ -1182,12 +1338,7 @@ class FeedAdapter(
                         holder.multiImage.apply {
                             val urlList: MutableList<String> = ArrayList()
                             for (element in reply.picArr)
-                                if ((PrefManager.imageQuality == "origin" ||
-                                            (PrefManager.imageQuality == "auto" && NetWorkUtil.isWifiConnected()))
-                                    && element.endsWith("gif")
-                                )
-                                    urlList.add(element)
-                                else urlList.add("$element.s.jpg")
+                                urlList.add("$element.s.jpg")
                             setUrlList(urlList)
                         }
                     } else {
@@ -1204,21 +1355,25 @@ class FeedAdapter(
             R.id.block -> {
                 BlackListUtil.saveUid(uid)
                 if (rPosition == null) {
-                    replyList.removeAt(position - 2)
+                    replyList.removeAt(
+                        if (feedList[0].data?.feedType == "feedArticle") position - articleList.size - 1
+                        else position - 2
+                    )
                     notifyItemRemoved(position)
                 } else {
-                    replyList[position - 2].replyRows?.removeAt(rPosition!!)
+                    replyList[if (feedList[0].data?.feedType == "feedArticle") position - articleList.size - 1
+                    else position - 2].replyRows?.removeAt(rPosition!!)
                     notifyItemChanged(position)
                 }
             }
 
             R.id.report -> {
-                val intent = Intent(mContext, WebViewActivity::class.java)
-                intent.putExtra(
-                    "url",
-                    "https://m.coolapk.com/mp/do?c=feed&m=report&type=feed_reply&id=$id"
-                )
-                mContext.startActivity(intent)
+                IntentUtil.startActivity<WebViewActivity>(mContext) {
+                    putExtra(
+                        "url",
+                        "https://m.coolapk.com/mp/do?c=feed&m=report&type=feed_reply&id=$id"
+                    )
+                }
             }
 
             R.id.delete -> {
@@ -1226,9 +1381,9 @@ class FeedAdapter(
             }
 
             R.id.copy -> {
-                val intent = Intent(mContext, CopyActivity::class.java)
-                intent.putExtra("text", text)
-                mContext.startActivity(intent)
+                IntentUtil.startActivity<CopyActivity>(mContext) {
+                    putExtra("text", text)
+                }
             }
 
             R.id.show -> {

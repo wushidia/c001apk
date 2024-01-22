@@ -1,8 +1,12 @@
 package com.example.c001apk.ui.fragment.home
 
-import android.content.Intent
+import android.annotation.SuppressLint
 import android.os.Bundle
+import android.util.TypedValue
+import android.view.Gravity
 import android.view.View
+import android.widget.TextView
+import androidx.appcompat.widget.ThemeUtils
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import androidx.viewpager2.adapter.FragmentStateAdapter
@@ -18,6 +22,7 @@ import com.example.c001apk.ui.fragment.minterface.IOnBottomClickContainer
 import com.example.c001apk.ui.fragment.minterface.IOnBottomClickListener
 import com.example.c001apk.ui.fragment.minterface.IOnTabClickContainer
 import com.example.c001apk.ui.fragment.minterface.IOnTabClickListener
+import com.example.c001apk.util.IntentUtil
 import com.example.c001apk.viewmodel.AppViewModel
 import com.google.android.material.tabs.TabLayout
 import com.google.android.material.tabs.TabLayout.Tab
@@ -47,9 +52,47 @@ class HomeFragment : BaseFragment<FragmentHomeBinding>(), IOnBottomClickListener
         initMenu()
 
         binding.tabLayout.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
-            override fun onTabSelected(tab: Tab?) {}
+            @SuppressLint("RestrictedApi")
+            override fun onTabSelected(tab: Tab?) {
+                viewModel.position = tab!!.position
+                val textView = TextView(requireContext())
+                val selectedSize = TypedValue.applyDimension(
+                    TypedValue.COMPLEX_UNIT_PX,
+                    17f,
+                    resources.displayMetrics
+                )
+                textView.paint.isFakeBoldText = true
+                textView.gravity = Gravity.CENTER_HORIZONTAL
+                textView.setTextColor(
+                    ThemeUtils.getThemeAttrColor(
+                        requireContext(),
+                        rikka.preference.simplemenu.R.attr.colorPrimary
+                    )
+                )
+                textView.setTextSize(TypedValue.COMPLEX_UNIT_SP, selectedSize)
+                textView.text = tab.text
+                tab.setCustomView(textView)
+            }
 
+            @SuppressLint("RestrictedApi")
             override fun onTabUnselected(tab: Tab?) {
+                val textView = TextView(requireContext())
+                val selectedSize = TypedValue.applyDimension(
+                    TypedValue.COMPLEX_UNIT_PX,
+                    15f,
+                    resources.displayMetrics
+                )
+                textView.paint.isFakeBoldText = false
+                textView.gravity = Gravity.CENTER_HORIZONTAL
+                textView.setTextColor(
+                    ThemeUtils.getThemeAttrColor(
+                        requireContext(),
+                        rikka.preference.simplemenu.R.attr.colorControlNormal
+                    )
+                )
+                textView.setTextSize(TypedValue.COMPLEX_UNIT_SP, selectedSize)
+                textView.text = tab?.text
+                tab?.setCustomView(textView)
             }
 
             override fun onTabReselected(tab: Tab?) {
@@ -76,19 +119,6 @@ class HomeFragment : BaseFragment<FragmentHomeBinding>(), IOnBottomClickListener
                 if (viewModel.tabList.isEmpty()) {
                     homeMenuDao.deleteAll()
                     initMenuList()
-                }
-            }
-            viewModel.fragmentList.apply {
-                for (element in viewModel.tabList) {
-                    when (element) {
-                        "关注" -> add(HomeFeedFragment.newInstance("follow"))
-                        "应用" -> add(AppListFragment())
-                        "头条" -> add(HomeFeedFragment.newInstance("feed"))
-                        "热榜" -> add(HomeFeedFragment.newInstance("rank"))
-                        "话题" -> add(TopicFragment.newInstance("topic"))
-                        "数码" -> add(TopicFragment.newInstance("product"))
-                        "酷图" -> add(HomeFeedFragment.newInstance("coolPic"))
-                    }
                 }
             }
             withContext(Dispatchers.Main) {
@@ -120,21 +150,32 @@ class HomeFragment : BaseFragment<FragmentHomeBinding>(), IOnBottomClickListener
 
     private fun initMenu() {
         binding.search.setOnClickListener {
-            requireActivity().startActivity(Intent(activity, SearchActivity::class.java))
+            IntentUtil.startActivity<SearchActivity>(requireContext()) {
+            }
         }
 
         binding.menu.setOnClickListener {
-            val intent = Intent(activity, CopyActivity::class.java)
-            intent.putExtra("type", "homeMenu")
-            requireActivity().startActivity(intent)
+            IntentUtil.startActivity<CopyActivity>(requireContext()) {
+                putExtra("type", "homeMenu")
+            }
         }
     }
 
+    @SuppressLint("RestrictedApi")
     private fun initView() {
         binding.viewPager.offscreenPageLimit = viewModel.tabList.size
         binding.viewPager.adapter = object : FragmentStateAdapter(this) {
             override fun createFragment(position: Int): Fragment {
-                return viewModel.fragmentList[position]
+                return when (viewModel.tabList[position]) {
+                    "关注" -> HomeFeedFragment.newInstance("follow")
+                    "应用" -> AppListFragment()
+                    "头条" -> HomeFeedFragment.newInstance("feed")
+                    "热榜" -> HomeFeedFragment.newInstance("rank")
+                    "话题" -> TopicFragment.newInstance("topic")
+                    "数码" -> TopicFragment.newInstance("product")
+                    "酷图" -> HomeFeedFragment.newInstance("coolPic")
+                    else -> throw IllegalArgumentException()
+                }
             }
 
             override fun getItemCount() = viewModel.tabList.size
@@ -147,6 +188,24 @@ class HomeFragment : BaseFragment<FragmentHomeBinding>(), IOnBottomClickListener
             viewModel.isInitial = false
             if (viewModel.tabList.contains("头条"))
                 binding.viewPager.setCurrentItem(viewModel.tabList.indexOf("头条"), false)
+        } else {
+            val textView = TextView(requireContext())
+            val selectedSize = TypedValue.applyDimension(
+                TypedValue.COMPLEX_UNIT_PX,
+                17f,
+                resources.displayMetrics
+            )
+            textView.paint.isFakeBoldText = true
+            textView.gravity = Gravity.CENTER_HORIZONTAL
+            textView.setTextColor(
+                ThemeUtils.getThemeAttrColor(
+                    requireContext(),
+                    rikka.preference.simplemenu.R.attr.colorPrimary
+                )
+            )
+            textView.setTextSize(TypedValue.COMPLEX_UNIT_SP, selectedSize)
+            textView.text = binding.tabLayout.getTabAt(viewModel.position)?.text
+            binding.tabLayout.getTabAt(viewModel.position)?.setCustomView(textView)
         }
     }
 
@@ -154,9 +213,14 @@ class HomeFragment : BaseFragment<FragmentHomeBinding>(), IOnBottomClickListener
         tabController?.onReturnTop(true)
     }
 
+    override fun onPause() {
+        super.onPause()
+        (requireContext() as? IOnBottomClickContainer)?.controller = null
+    }
+
     override fun onResume() {
         super.onResume()
-        (requireContext() as IOnBottomClickContainer).controller = this
+        (requireContext() as? IOnBottomClickContainer)?.controller = this
     }
 
 }

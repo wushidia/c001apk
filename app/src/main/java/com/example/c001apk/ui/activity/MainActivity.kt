@@ -36,8 +36,6 @@ import com.google.android.material.behavior.HideBottomViewOnScrollBehavior
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.navigation.NavigationBarView
 import java.net.URLEncoder
-import java.text.NumberFormat
-import java.util.Locale
 
 
 class MainActivity : BaseActivity<ActivityMainBinding>(), IOnBottomClickContainer,
@@ -77,11 +75,9 @@ class MainActivity : BaseActivity<ActivityMainBinding>(), IOnBottomClickContaine
                 }
             }
 
-            registerOnPageChangeCallback(object :
-                ViewPager2.OnPageChangeCallback() {
+            registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
                 override fun onPageSelected(position: Int) {
                     super.onPageSelected(position)
-                    navView.menu.getItem(position)?.isChecked = true
                     when (position) {
                         0 -> onBackPressedCallback.isEnabled = false
                         1 -> onBackPressedCallback.isEnabled = true
@@ -101,7 +97,6 @@ class MainActivity : BaseActivity<ActivityMainBinding>(), IOnBottomClickContaine
             setOnItemSelectedListener {
                 when (it.itemId) {
                     R.id.navigation_home -> {
-                        onBackPressedCallback.isEnabled = false
                         if (binding.viewPager.currentItem == 0)
                             controller?.onReturnTop()
                         else
@@ -109,14 +104,12 @@ class MainActivity : BaseActivity<ActivityMainBinding>(), IOnBottomClickContaine
                     }
 
                     R.id.navigation_message -> {
-                        onBackPressedCallback.isEnabled = true
                         binding.viewPager.setCurrentItem(1, true)
                         if (viewModel.badge != 0)
                             navView.removeBadge(R.id.navigation_message)
                     }
 
                     R.id.navigation_setting -> {
-                        onBackPressedCallback.isEnabled = true
                         binding.viewPager.setCurrentItem(2, true)
                     }
 
@@ -185,11 +178,11 @@ class MainActivity : BaseActivity<ActivityMainBinding>(), IOnBottomClickContaine
                 if (appInfo?.data != null) {
                     try {
                         PrefManager.VERSION_NAME = appInfo.data.apkversionname
-                        val int =
+                        /*val int =
                             NumberFormat.getInstance(Locale.US).parse(appInfo.data.apkversionname)
                                 ?.toFloat()?.toInt().toString()
-                        if (int != "")
-                            PrefManager.API_VERSION = int
+                        if (int != "")*/
+                        PrefManager.API_VERSION = "13"
                         PrefManager.VERSION_CODE = appInfo.data.apkversioncode
                         PrefManager.USER_AGENT =
                             "Dalvik/2.1.0 (Linux; U; Android ${PrefManager.ANDROID_VERSION}; ${PrefManager.MODEL} ${PrefManager.BUILDNUMBER}) (#Build; ${PrefManager.BRAND}; ${PrefManager.MODEL}; ${PrefManager.BUILDNUMBER}; ${PrefManager.ANDROID_VERSION}) +CoolMarket/${appInfo.data.apkversionname}-${appInfo.data.apkversioncode}-${Constants.MODE}"
@@ -227,8 +220,9 @@ class MainActivity : BaseActivity<ActivityMainBinding>(), IOnBottomClickContaine
     private val onBackPressedCallback = object : OnBackPressedCallback(false) {
         override fun handleOnBackPressed() {
             if (binding.viewPager.currentItem != 0) {
+                this.isEnabled = false
                 showNavigationView()
-                binding.viewPager.setCurrentItem(0, true)
+                navView.selectedItemId = navView.menu.getItem(0).itemId
             }
         }
     }

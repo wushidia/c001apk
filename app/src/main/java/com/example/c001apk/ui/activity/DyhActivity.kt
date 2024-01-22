@@ -29,14 +29,18 @@ class DyhActivity : BaseActivity<ActivityDyhDetailBinding>() {
     private fun initData() {
         viewModel.tabList.add("精选")
         viewModel.tabList.add("广场")
-        viewModel.fragmentList.add(DyhDetailFragment.newInstance(viewModel.id.toString(), "all"))
-        viewModel.fragmentList.add(DyhDetailFragment.newInstance(viewModel.id.toString(), "square"))
     }
 
     private fun initView() {
         binding.viewPager.offscreenPageLimit = viewModel.tabList.size
         binding.viewPager.adapter = object : FragmentStateAdapter(this) {
-            override fun createFragment(position: Int) = viewModel.fragmentList[position]
+            override fun createFragment(position: Int) =
+                when (position) {
+                    0 -> DyhDetailFragment.newInstance(viewModel.id.toString(), "all")
+                    1 -> DyhDetailFragment.newInstance(viewModel.id.toString(), "square")
+                    else -> throw IllegalArgumentException()
+                }
+
             override fun getItemCount() = viewModel.tabList.size
         }
         TabLayoutMediator(binding.tabLayout, binding.viewPager) { tab, position ->
