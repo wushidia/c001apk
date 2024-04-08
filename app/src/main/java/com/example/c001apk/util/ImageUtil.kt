@@ -18,26 +18,27 @@ import android.view.View
 import android.widget.ImageView
 import android.widget.Toast
 import androidx.core.content.FileProvider
+import androidx.core.view.isVisible
 import androidx.fragment.app.FragmentActivity
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.bumptech.glide.load.model.GlideUrl
 import com.bumptech.glide.load.model.LazyHeaders
+import com.bumptech.glide.load.resource.bitmap.CenterCrop
 import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions.withCrossFade
 import com.bumptech.glide.request.transition.Transition
 import com.example.c001apk.R
 import com.example.c001apk.constant.Constants.USER_AGENT
 import com.example.c001apk.util.ClipboardUtil.copyText
-import com.example.c001apk.util.FileUtil.Companion.copyFile
-import com.example.c001apk.util.FileUtil.Companion.createFileByDeleteOldFile
+import com.example.c001apk.util.FileUtil.copyFile
+import com.example.c001apk.util.FileUtil.createFileByDeleteOldFile
 import com.example.c001apk.view.FileTarget
 import com.example.c001apk.view.ninegridimageview.NineGridImageView
 import com.example.c001apk.view.ninegridimageview.indicator.CircleIndexIndicator
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import jp.wasabeef.glide.transformations.ColorFilterTransformation
-import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import net.mikaelzero.mojito.Mojito
@@ -106,36 +107,36 @@ object ImageUtil {
     }
 
     @SuppressLint("CheckResult")
-    fun showIMG(view: ImageView, url: String?) {
-        val newUrl = GlideUrl(
-            url?.http2https(),
-            LazyHeaders.Builder().addHeader("User-Agent", USER_AGENT).build()
-        )
-        if (url?.endsWith(".gif") == true)
+    fun showIMG(view: ImageView, url: String?, isCover: Boolean = false) {
+        url?.let {
+            val newUrl = GlideUrl(
+                it.http2https(),
+                LazyHeaders.Builder().addHeader("User-Agent", USER_AGENT).build()
+            )
             Glide
-                .with(view)
-                .asGif()
-                .load(newUrl).apply {
-                    if (ResourceUtils.isNightMode(view.context.resources.configuration)
-                        && PrefManager.isColorFilter
-                    )
-                        transform(ColorFilterTransformation(Color.parseColor("#2D000000")))
+                .with(view).apply {
+                    if (it.endsWith(".gif"))
+                        asGif()
                 }
+                .load(newUrl).apply {
+                    if (isCover) {
+                        transform(ColorFilterTransformation(Color.parseColor("#8A000000")))
+                    } else if (ResourceUtils.isNightMode(view.context.resources.configuration)
+                        && PrefManager.isColorFilter
+                    ) {
+                        transform(
+                            CenterCrop(),
+                            ColorFilterTransformation(Color.parseColor("#2D000000"))
+                        )
+                    } else {
+                        transform(CenterCrop())
+                    }
+                }
+                .transition(withCrossFade())
                 .diskCacheStrategy(DiskCacheStrategy.ALL)
                 .skipMemoryCache(false)
                 .into(view)
-        else
-            Glide
-                .with(view)
-                .load(newUrl).apply {
-                    if (ResourceUtils.isNightMode(view.context.resources.configuration)
-                        && PrefManager.isColorFilter
-                    )
-                        transform(ColorFilterTransformation(Color.parseColor("#2D000000")))
-                }
-                .diskCacheStrategy(DiskCacheStrategy.ALL)
-                .skipMemoryCache(false)
-                .into(view)
+        }
     }
 
     private suspend fun saveImageToGallery(ctx: Context, imageUrl: String): Boolean =
@@ -194,41 +195,40 @@ object ImageUtil {
         )
         if (imageCheckDir.exists()) {
             if (isEnd)
-                ToastUtil.toast("文件已存在")
+                ToastUtil.toast(context, "文件已存在")
         } else {
             downloadPicture(context, url.http2https(), filename, isEnd)
         }
     }
 
-    @OptIn(DelicateCoroutinesApi::class)
     private fun showSaveImgDialog(context: Context, url: String, urlList: List<String>?) {
         MaterialAlertDialogBuilder(context).apply {
             val items = arrayOf("保存图片", "保存全部图片", "图片分享", "复制图片地址")
             setItems(items) { _: DialogInterface?, position: Int ->
                 when (position) {
                     0 -> {
-                        GlobalScope.launch {
+                        CoroutineScope(Dispatchers.IO).launch {
                             saveImage(context, url, true)
                         }
                     }
 
                     1 -> {
-                        GlobalScope.launch {
+                        CoroutineScope(Dispatchers.IO).launch {
                             if (urlList.isNullOrEmpty()) {
                                 saveImage(context, url, true)
                             } else {
                                 var isEnd = false
-                                for (mUrl in urlList) {
-                                    if (urlList.indexOf(mUrl) == urlList.size - 1)
+                                urlList.forEach {
+                                    if (urlList.indexOf(it) == urlList.size - 1)
                                         isEnd = true
-                                    saveImage(context, mUrl, isEnd)
+                                    saveImage(context, it, isEnd)
                                 }
                             }
                         }
                     }
 
                     2 -> {
-                        GlobalScope.launch {
+                        CoroutineScope(Dispatchers.IO).launch {
                             val index = url.lastIndexOf('/')
                             filename = url.substring(index + 1)
                             imagesDir = File(context.externalCacheDir, "imageShare")
@@ -252,7 +252,7 @@ object ImageUtil {
                                     )
                                 }
                             } else {
-                                ToastUtil.toast("分享失败")
+                                ToastUtil.toast(context, "分享失败")
                             }
                         }
                     }
@@ -313,24 +313,20 @@ object ImageUtil {
                 override fun onStartAnim(position: Int) {
                     nineGridView.getImageViewAt(position)?.apply {
                         postDelayed({
-                            this.visibility = View.GONE
+                            this.isVisible = false
                         }, 200)
                     }
                 }
 
                 override fun onMojitoViewFinish(pagePosition: Int) {
                     nineGridView.getImageViews().forEach {
-                        it.visibility = View.VISIBLE
+                        it.isVisible = true
                     }
                 }
 
                 override fun onViewPageSelected(position: Int) {
                     nineGridView.getImageViews().forEachIndexed { index, imageView ->
-                        if (position == index) {
-                            imageView.visibility = View.GONE
-                        } else {
-                            imageView.visibility = View.VISIBLE
-                        }
+                        imageView.isVisible = position != index
                     }
                 }
 
@@ -440,70 +436,40 @@ object ImageUtil {
         startBigImgViewSimple(context, listOf(url.http2https()))
     }
 
-    /*fun showPaletteColor(imageView: ImageView, url: String?) {
-        val newUrl = GlideUrl(
-            url,
-            LazyHeaders.Builder().addHeader("User-Agent", USER_AGENT).build()
-        )
-        Glide.with(context)
-            .asBitmap()
-            .load(newUrl)
-            .into(object : CustomTarget<Bitmap?>() {
-                override fun onResourceReady(
-                    resource: Bitmap,
-                    transition: Transition<in Bitmap?>?
-                ) {
-                    Palette.from(resource).generate { palette ->
-                        if (palette != null) {
-                            val vibrantSwatch = palette.vibrantSwatch
-                            val darkVibrantSwatch = palette.darkVibrantSwatch
-                            val lightVibrantSwatch = palette.lightVibrantSwatch
-                            val mutedSwatch = palette.mutedSwatch
-                            val darkMutedSwatch = palette.darkMutedSwatch
-                            val lightMutedSwatch = palette.lightMutedSwatch
-
-                            if (darkVibrantSwatch != null) {
-                                imageView.setBackgroundColor(darkVibrantSwatch.rgb)
-                            }
-                        }
-                    }
-                }
-
-                override fun onLoadCleared(placeholder: Drawable?) {}
-            })
-    }*/
-
 
     // 将File 转化为 content://URI
-    private fun getFileProvider(context: Context, file: File?): Uri {
+    private fun getFileProvider(context: Context, file: File): Uri {
         val authority = context.packageName + ".fileprovider"
         return FileProvider.getUriForFile(
             context, authority,
-            file!!
+            file
         )
     }
 
-    private fun shareImage(context: Context, file: File?, title: String?) {
+    private fun shareImage(context: Context, file: File, title: String?) {
         val contentUri = getFileProvider(context, file)
         val intent = Intent(Intent.ACTION_SEND)
         intent.type = "image/*"
         intent.putExtra(Intent.EXTRA_STREAM, contentUri)
+        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         context.startActivity(Intent.createChooser(intent, title))
     }
 
-    private fun shareVideo(context: Context, file: File?, title: String?) {
+    private fun shareVideo(context: Context, file: File, title: String?) {
         val contentUri = getFileProvider(context, file)
         val intent = Intent(Intent.ACTION_SEND)
         intent.type = "video/*"
         intent.putExtra(Intent.EXTRA_STREAM, contentUri)
+        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         context.startActivity(Intent.createChooser(intent, title))
     }
 
-    private fun shareFile(context: Context, file: File?, title: String?) {
+    private fun shareFile(context: Context, file: File, title: String?) {
         val contentUri = getFileProvider(context, file)
         val intent = Intent(Intent.ACTION_SEND)
         intent.type = "*/*"
         intent.putExtra(Intent.EXTRA_STREAM, contentUri)
+        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         context.startActivity(Intent.createChooser(intent, title))
     }
 
@@ -603,6 +569,19 @@ object ImageUtil {
         }
         Log.d("getImageTypeWithMime", "getImageTypeWithMime: path = $path, type2 = $type")
         return type
+    }
+
+    fun getImageLp(url: String): Pair<Int, Int> {
+        var imgWidth = 1
+        var imgHeight = 1
+        val at = url.lastIndexOf("@")
+        val x = url.lastIndexOf("x")
+        val dot = url.lastIndexOf(".")
+        if (at != -1 && x != -1 && dot != -1) {
+            imgWidth = url.substring(at + 1, x).toInt()
+            imgHeight = url.substring(x + 1, dot).toInt()
+        }
+        return Pair(imgWidth, imgHeight)
     }
 
 }

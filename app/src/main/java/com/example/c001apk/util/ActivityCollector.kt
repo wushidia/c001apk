@@ -1,7 +1,6 @@
 package com.example.c001apk.util
 
 import android.app.Activity
-import android.util.Log
 
 object ActivityCollector {
 
@@ -9,7 +8,7 @@ object ActivityCollector {
 
     fun addActivity(activity: Activity) {
         activities.add(activity)
-        Log.i("ActivityCollector", "addActivity: ${activity.javaClass.name}")
+        // Log.i("ActivityCollector", "addActivity: ${activity.javaClass.name}")
     }
 
     fun removeActivity(activity: Activity) {
@@ -17,7 +16,7 @@ object ActivityCollector {
     }
 
     fun finishOneActivity(activityName: String) {
-        for (activity in activities) {
+        activities.forEach { activity ->
             val name = activity.javaClass.name
             if (name == activityName) {
                 if (activity.isFinishing) {
@@ -30,7 +29,7 @@ object ActivityCollector {
     }
 
     fun recreateActivity(activityName: String) {
-        for (activity in activities) {
+        activities.forEach { activity ->
             val name = activity.javaClass.name
             if (name == activityName) {
                 activity.recreate()
@@ -39,8 +38,7 @@ object ActivityCollector {
     }
 
     fun finishOtherActivity(activityName: String) {
-
-        for (activity in activities) {
+        activities.forEach { activity ->
             val name = activity.javaClass.name //activity的类名
             if (name != activityName) {
                 if (activity.isFinishing) {
@@ -53,7 +51,7 @@ object ActivityCollector {
     }
 
     fun finishAll() {
-        for (activity in activities) {
+        activities.forEach { activity ->
             if (!activity.isFinishing) {
                 activity.finish()
             }

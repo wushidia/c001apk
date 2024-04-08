@@ -1,31 +1,11 @@
 package com.example.c001apk.logic.database
 
-import android.content.Context
 import androidx.room.Database
-import androidx.room.Room
 import androidx.room.RoomDatabase
-import com.example.c001apk.logic.dao.SearchHistoryDao
-import com.example.c001apk.logic.model.SearchHistory
+import com.example.c001apk.logic.dao.StringEntityDao
+import com.example.c001apk.logic.model.StringEntity
 
-@Database(version = 1, entities = [SearchHistory::class])
+@Database(version = 1, entities = [StringEntity::class])
 abstract class SearchHistoryDatabase : RoomDatabase() {
-    abstract fun searchHistoryDao(): SearchHistoryDao
-
-    companion object {
-        private var instance: SearchHistoryDatabase? = null
-
-        @Synchronized
-        fun getDatabase(context: Context): SearchHistoryDatabase {
-            instance?.let {
-                return it
-            }
-            return Room.databaseBuilder(
-                context.applicationContext,
-                SearchHistoryDatabase::class.java, "search_history_database"
-            )
-                .build().apply {
-                    instance = this
-                }
-        }
-    }
+    abstract fun searchHistoryDao(): StringEntityDao
 }

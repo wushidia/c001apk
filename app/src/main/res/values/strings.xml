@@ -95,12 +95,12 @@
     <string name="topic_hot">热度排序</string>
     <string name="show_reply">查看评论</string>
     <string name="download">下载</string>
-    <string name="zmlmId">数字联盟ID</string>
+    <string name="szlmId">数字联盟ID</string>
     <string name="params">机型参数</string>
     <string name="user_black_list">用户黑名单</string>
     <string name="add">添加</string>
     <string name="block">加入黑名单</string>
-    <string name="publishFeed">发动态</string>
+    <string name="publishFeed">发布动态</string>
     <string name="share">分享</string>
     <string name="history">浏览历史</string>
     <string name="record_history">记录浏览历史</string>
@@ -128,5 +128,15 @@
     <string name="retry">重试</string>
     <string name="loading_failed">加载失败</string>
     <string name="color_filter_in_dark_mode">深色模式压暗图片</string>
-
+    <string name="edit_tab">编辑Tab</string>
+    <string name="random_value">随机值</string>
+    <string name="system_info">使用系统信息</string>
+    <string name="update">更新</string>
+    <string name="show_question">查看提问</string>
+    <string name="type_rating">点评</string>
+    <string name="type_question">提问</string>
+    <string name="type_answer">回答</string>
+    <string name="type_vote">投票</string>
+    <string name="check_apps_update">检查应用更新</string>
+    <string name="check_user_info">查看用户资料</string>
 </resources>

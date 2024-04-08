@@ -16,7 +16,7 @@ data class TotalReplyResponse(
         val ruid: String,
         val uid: String,
         val feedUid: String,
-        val username: String,
+        var username: String,
         val rusername: String,
         val message: String,
         val pic: String,
@@ -26,7 +26,7 @@ data class TotalReplyResponse(
         val replynum: String,
         val userAvatar: String,
         val replyRows: ArrayList<Data>?,
-        val replyRowsMore: Int,
+        val replyRowsMore: Int?,
         val userAction: UserAction?
     )
 

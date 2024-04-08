@@ -1,6 +1,7 @@
 package com.example.c001apk.util
 
 import android.content.Context.MODE_PRIVATE
+import android.content.SharedPreferences
 import androidx.appcompat.app.AppCompatDelegate
 import com.example.c001apk.MyApplication.Companion.context
 import com.example.c001apk.constant.Constants
@@ -12,7 +13,6 @@ object PrefManager {
     private const val PREF_FOLLOW_SYSTEM_ACCENT = "follow_system_accent"
     private const val PREF_THEME_COLOR = "theme_color"
     private const val SHOW_EMOJI = "show_emoji"
-    private const val ALL_HUAJI = "all_huaji"
     private const val UID = "uid"
     private const val NAME = "name"
     private const val TOKEN = "token"
@@ -83,10 +83,6 @@ object PrefManager {
         get() = pref.getBoolean("customToken", false)
         set(value) = pref.edit().putBoolean("customToken", value).apply()
 
-    var isClearKeyWord: Boolean
-        get() = pref.getBoolean("isClearKeyWord", false)
-        set(value) = pref.edit().putBoolean("isClearKeyWord", value).apply()
-
     var VERSION_NAME: String
         get() = pref.getString("VERSION_NAME", Constants.VERSION_NAME)!!
         set(value) = pref.edit().putString("VERSION_NAME", value).apply()
@@ -156,6 +152,18 @@ object PrefManager {
         set(value) = pref.edit().putString("imageQuality", value).apply()
 
     var isColorFilter: Boolean
-        get() = pref.getBoolean("isColorFilter", false)
+        get() = pref.getBoolean("isColorFilter", true)
         set(value) = pref.edit().putBoolean("isColorFilter", value).apply()
+
+    var isCheckUpdate: Boolean
+        get() = pref.getBoolean("isCheckUpdate", true)
+        set(value) = pref.edit().putBoolean("isCheckUpdate", value).apply()
+
+    fun registerOnSharedPreferenceChangeListener(listener: SharedPreferences.OnSharedPreferenceChangeListener) {
+        pref.registerOnSharedPreferenceChangeListener(listener)
+    }
+
+    fun unregisterOnSharedPreferenceChangeListener(listener: SharedPreferences.OnSharedPreferenceChangeListener) {
+        pref.unregisterOnSharedPreferenceChangeListener(listener)
+    }
 }

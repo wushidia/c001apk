@@ -1,21 +1,19 @@
 package com.example.c001apk.view
 
-import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.Rect
 import android.view.View
-import androidx.appcompat.widget.ThemeUtils
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.absinthe.libraries.utils.extensions.dp
+import com.google.android.material.color.MaterialColors
 
-@SuppressLint("RestrictedApi")
 class StickyItemDecorator(
     context: Context,
     private val space: Int,
-    private var itemCount: Int = 1,
+    private var itemCount: Int = 2,
     private val listener: SortShowListener
 ) :
     RecyclerView.ItemDecoration() {
@@ -25,9 +23,10 @@ class StickyItemDecorator(
     init {
         mPaint.isAntiAlias = true
         mPaint.color =
-            ThemeUtils.getThemeAttrColor(
+            MaterialColors.getColor(
                 context,
-                com.google.android.material.R.attr.colorSurfaceVariant
+                com.google.android.material.R.attr.colorSurfaceVariant,
+                0
             )
     }
 
@@ -37,8 +36,17 @@ class StickyItemDecorator(
         for (i in 0 until childCount) {
             val view = parent.getChildAt(i)
             val index = parent.getChildAdapterPosition(view)
-            if (index >= itemCount) {
-                val dividerTop = view.top.toFloat() - space
+            if (index == itemCount - 1) {
+                val dividerTop = view.bottom.toFloat() + 12.dp
+                val dividerLeft = parent.paddingLeft
+                val dividerBottom = view.bottom + 12.dp + 1
+                val dividerRight = parent.width - parent.paddingRight
+                c.drawRect(
+                    dividerLeft.toFloat(), dividerTop, dividerRight.toFloat(),
+                    dividerBottom.toFloat(), mPaint
+                )
+            } else if (index > itemCount) {
+                val dividerTop = view.top.toFloat() - 1
                 val dividerLeft = parent.paddingLeft
                 val dividerBottom = view.top
                 val dividerRight = parent.width - parent.paddingRight
@@ -47,15 +55,15 @@ class StickyItemDecorator(
                     dividerBottom.toFloat(), mPaint
                 )
             }
-
         }
     }
 
     override fun onDrawOver(c: Canvas, parent: RecyclerView, state: RecyclerView.State) {
         super.onDrawOver(c, parent, state)
-        if (parent.adapter!!.itemCount <= 0)
+        if ((parent.adapter?.itemCount ?: 0) <= 0)
             return
-        val index = (parent.layoutManager as LinearLayoutManager?)!!.findFirstVisibleItemPosition()
+        val index =
+            (parent.layoutManager as LinearLayoutManager?)?.findFirstVisibleItemPosition() ?: 0
         if (index >= itemCount) {
             listener.showSort(true)
         } else {
@@ -74,12 +82,16 @@ class StickyItemDecorator(
         state: RecyclerView.State
     ) {
         val position = parent.getChildAdapterPosition(view)
-        if (position >= itemCount) {
-            outRect.top = space
+        if (position <= itemCount) {
+            if (position < itemCount)
+                outRect.bottom =
+                    if (position == itemCount - 1) 12.dp + 1
+                    else 12.dp
+            outRect.left = 15.dp
+            outRect.right = 15.dp
         }
-        if (itemCount != 1 && position == itemCount - 1) {
-            outRect.bottom = 10.dp
-        }
+        if (position > itemCount)
+            outRect.top = 1
     }
 
 }

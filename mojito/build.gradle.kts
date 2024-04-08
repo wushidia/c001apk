@@ -1,9 +1,6 @@
 import com.android.build.gradle.BaseExtension
 import com.android.build.gradle.LibraryExtension
 import com.android.build.gradle.internal.dsl.BaseAppModuleExtension
-import org.gradle.api.JavaVersion
-import org.gradle.api.Project
-import org.gradle.api.plugins.ExtensionAware
 import org.jetbrains.kotlin.gradle.dsl.KotlinJvmOptions
 
 plugins {
@@ -16,7 +13,7 @@ group = "com.github.mikaelzero"
 setupLibraryModule {
     namespace = "net.mikaelzero.mojito"
     defaultConfig {
-        minSdk = 16
+        minSdk = 24
         buildFeatures {
             viewBinding = true
         }
@@ -50,7 +47,7 @@ inline fun <reified T : BaseExtension> Project.setupBaseModule(crossinline block
     extensions.configure<BaseExtension>("android") {
         compileSdkVersion(34)
         defaultConfig {
-            minSdk = 16
+            minSdk = 24
             targetSdk = 34
             testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         }
@@ -71,11 +68,11 @@ fun BaseExtension.kotlinOptions(block: KotlinJvmOptions.() -> Unit) {
 
 
 dependencies {
-    implementation("androidx.appcompat:appcompat:1.6.1")
-    implementation("androidx.core:core-ktx:1.12.0")
-    implementation("androidx.recyclerview:recyclerview:1.3.2")
-    implementation("org.jetbrains.kotlin:kotlin-stdlib:1.9.22")
-    implementation("com.geyifeng.immersionbar:immersionbar:3.2.2")
-    implementation("androidx.exifinterface:exifinterface:1.3.7")
-    implementation("androidx.viewpager2:viewpager2:1.0.0")
+    implementation(libs.androidx.appcompat)
+    implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.recyclerview)
+    implementation(libs.kotlin.stdlib)
+    implementation(libs.immersionbar)
+    implementation(libs.androidx.exifinterface)
+    implementation(libs.androidx.viewpager2)
 }

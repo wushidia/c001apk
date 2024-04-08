@@ -5,10 +5,11 @@ import android.content.ClipboardManager
 import android.content.Context
 
 object ClipboardUtil {
-    fun copyText(ctx: Context, text: String) {
+    fun copyText(context: Context, text: String, showToast: Boolean = true) {
         val clipboardManager =
-            ctx.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+            context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
         ClipData.newPlainText("c001apk text", text)?.let { clipboardManager.setPrimaryClip(it) }
-        ToastUtil.toast("已复制: $text")
+        if (showToast)
+            ToastUtil.toast(context, "已复制: $text")
     }
 }

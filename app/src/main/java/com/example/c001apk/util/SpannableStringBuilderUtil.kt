@@ -7,7 +7,6 @@ import android.text.Spannable
 import android.text.SpannableStringBuilder
 import android.text.style.URLSpan
 import com.example.c001apk.view.CenteredImageSpan
-import com.example.c001apk.view.CenteredImageSpan1
 import com.example.c001apk.view.MyURLSpan
 import java.util.regex.Pattern
 
@@ -20,21 +19,17 @@ object SpannableStringBuilderUtil {
         while (matcher.find()) {
             val group = matcher.group()
             if (EmojiUtil.getEmoji(group) != -1) {
-                val emoji: Drawable =
-                    mContext.getDrawable(EmojiUtil.getEmoji(group))!!
-                emoji.setBounds(
-                    0,
-                    0,
-                    size,
-                    size
-                )
-                val imageSpan = CenteredImageSpan(emoji, size)
-                builder.setSpan(
-                    imageSpan,
-                    matcher.start(),
-                    matcher.end(),
-                    Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
-                )
+                val emoji: Drawable? = mContext.getDrawable(EmojiUtil.getEmoji(group))
+                emoji?.let {
+                    it.setBounds(0, 0, size, size)
+                    val imageSpan = CenteredImageSpan(it, size, null)
+                    builder.setSpan(
+                        imageSpan,
+                        matcher.start(),
+                        matcher.end(),
+                        Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
+                    )
+                }
             }
         }
         return builder
@@ -53,12 +48,12 @@ object SpannableStringBuilderUtil {
     fun setText(
         mContext: Context,
         text: String,
-        size: Int,
-        imgList: List<String>?
+        size: Float,
+        imgList: List<String>?,
+        showMoreReply: (() -> Unit)? = null
     ): SpannableStringBuilder {
         val mess = Html.fromHtml(
-            StringBuilder(text).append(" ").toString()
-                .replace("\n", " <br />"),
+            text.replace("\n", " <br/>") + "\u3000",
             Html.FROM_HTML_MODE_COMPACT
         )
         val builder = SpannableStringBuilder(mess)
@@ -68,94 +63,34 @@ object SpannableStringBuilderUtil {
             0, mess.length,
             URLSpan::class.java
         )
-        for (url in urls) {
-            val myURLSpan = MyURLSpan(mContext, url.url, imgList)
+        urls.forEach {
+            val myURLSpan = MyURLSpan(mContext, it.url, imgList, showMoreReply)
             myURLSpan.setData(position, uid)
             myURLSpan.isColor = isColor
             myURLSpan.isReturn = isReturn
-            val start = builder.getSpanStart(url)
-            val end = builder.getSpanEnd(url)
-            val flags = builder.getSpanFlags(url)
+            val start = builder.getSpanStart(it)
+            val end = builder.getSpanEnd(it)
+            val flags = builder.getSpanFlags(it)
             builder.setSpan(myURLSpan, start, end, flags)
-            builder.removeSpan(url)
+            builder.removeSpan(it)
         }
         while (matcher.find()) {
             val group = matcher.group()
             if (EmojiUtil.getEmoji(group) != -1) {
-                val emoji: Drawable =
-                    mContext.getDrawable(EmojiUtil.getEmoji(group))!!
-                emoji.setBounds(
-                    0,
-                    0,
-                    size,
-                    size
-                )
-                val imageSpan = CenteredImageSpan(emoji, size)
-                builder.setSpan(
-                    imageSpan,
-                    matcher.start(),
-                    matcher.end(),
-                    Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
-                )
-            }
-        }
-        return builder
-    }
-
-    fun setReply(
-        mContext: Context,
-        text: String,
-        size: Int,
-        imgList: List<String>?
-    ): SpannableStringBuilder {
-        val mess = Html.fromHtml(
-            StringBuilder(text).append(" ").toString()
-                .replace("\n", " <br />"),
-            Html.FROM_HTML_MODE_COMPACT
-        )
-        val builder = SpannableStringBuilder(mess)
-        val pattern = Pattern.compile("\\[[^\\]]+\\]")
-        val matcher = pattern.matcher(builder)
-        val urls = builder.getSpans(
-            0, mess.length,
-            URLSpan::class.java
-        )
-        for (url in urls) {
-            val myURLSpan = MyURLSpan(mContext, url.url, imgList)
-            myURLSpan.setData(position, uid)
-            myURLSpan.isColor = isColor
-            val start = builder.getSpanStart(url)
-            val end = builder.getSpanEnd(url)
-            val flags = builder.getSpanFlags(url)
-            builder.setSpan(myURLSpan, start, end, flags)
-            builder.removeSpan(url)
-        }
-        while (matcher.find()) {
-            val group = matcher.group()
-            if (EmojiUtil.getEmoji(group) != -1) {
-                val emoji: Drawable =
-                    mContext.getDrawable(EmojiUtil.getEmoji(group))!!
-                if (group == "[楼主]" || group == "[层主]" || group == "[置顶]")
-                    emoji.setBounds(
-                        0,
-                        0,
-                        size * 2,
-                        size
+                val emoji: Drawable? = mContext.getDrawable(EmojiUtil.getEmoji(group))
+                emoji?.let {
+                    if (group in listOf("[楼主]", "[层主]", "[置顶]"))
+                        it.setBounds(0, 0, (size * 2).toInt(), size.toInt())
+                    else
+                        it.setBounds(0, 0, (size * 1.3).toInt(), (size * 1.3).toInt())
+                    val imageSpan = CenteredImageSpan(it, (size * 1.3).toInt(), group)
+                    builder.setSpan(
+                        imageSpan,
+                        matcher.start(),
+                        matcher.end(),
+                        Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
                     )
-                else
-                    emoji.setBounds(
-                        0,
-                        0,
-                        (size * 1.3).toInt(),
-                        (size * 1.3).toInt()
-                    )
-                val imageSpan = CenteredImageSpan1(emoji)
-                builder.setSpan(
-                    imageSpan,
-                    matcher.start(),
-                    matcher.end(),
-                    Spannable.SPAN_EXCLUSIVE_EXCLUSIVE
-                )
+                }
             }
         }
         return builder

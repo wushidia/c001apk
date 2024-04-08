@@ -3,24 +3,20 @@ import org.jetbrains.kotlin.konan.properties.Properties
 import java.io.ByteArrayOutputStream
 
 plugins {
-    id("com.android.application")
-    id("org.jetbrains.kotlin.android")
-    id("dev.rikka.tools.materialthemebuilder")
-    id("com.google.devtools.ksp")
-    id("stringfog")
+    alias(libs.plugins.android.application)
+    alias(libs.plugins.jetbrains.kotlin.android)
+    alias(libs.plugins.google.devtools.ksp)
+    alias(libs.plugins.rikka.tools.materialthemebuilder)
+    alias(libs.plugins.google.dagger.hilt.android)
+    alias(libs.plugins.kotlin.kapt)
+    alias(libs.plugins.kotlin.parcelize)
 }
-apply(plugin = "stringfog")
 
-configure<com.github.megatronking.stringfog.plugin.StringFogExtension> {
-    // 必要：加解密库的实现类路径，需和上面配置的加解密算法库一致。
-    implementation = "com.github.megatronking.stringfog.xor.StringFogImpl"
-    // 可选：加密开关，默认开启。
-    enable = true
-    // 可选：指定需加密的代码包路径，可配置多个，未指定将默认全部加密。
-    fogPackages = arrayOf("com.example.c001apk")
-    //kg = com.github.megatronking.stringfog.plugin.kg.RandomKeyGenerator()
-    // base64或者bytes
-    mode = com.github.megatronking.stringfog.plugin.StringFogMode.bytes
+apply(plugin = "kotlin-kapt")
+
+kapt {
+    generateStubs = true
+    correctErrorTypes = true
 }
 
 materialThemeBuilder {
@@ -138,6 +134,7 @@ android {
     }
     buildFeatures {
         viewBinding = true
+        dataBinding = true
         buildConfig = true
     }
     val SUPPORTED_ABIS = setOf(
@@ -179,40 +176,44 @@ configurations.configureEach {
 }
 
 dependencies {
-    implementation("androidx.core:core-ktx:1.12.0")
-    implementation("androidx.appcompat:appcompat:1.6.1")
-    implementation("com.google.android.material:material:1.11.0")
-    implementation("androidx.constraintlayout:constraintlayout:2.1.4")
-    implementation("androidx.preference:preference-ktx:1.2.1")
-    testImplementation("junit:junit:4.13.2")
-    androidTestImplementation("androidx.test.ext:junit:1.1.5")
-    androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
-    implementation("com.squareup.retrofit2:retrofit:2.9.0")
-    implementation("com.squareup.retrofit2:converter-gson:2.9.0")
-    implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.1.0")
-    implementation("com.github.bumptech.glide:glide:4.16.0")
-    ksp("com.github.bumptech.glide:ksp:4.16.0")
-    implementation("com.github.bumptech.glide:okhttp3-integration:4.16.0")
-    implementation("androidx.lifecycle:lifecycle-extensions:2.2.0")
-    implementation("androidx.lifecycle:lifecycle-livedata-ktx:2.7.0")
-    implementation("org.mindrot:jbcrypt:0.4-atlassian-1")
-    implementation("com.drakeet.about:about:2.5.2")
-    implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.7.0")
-    implementation("com.google.android.flexbox:flexbox:3.0.0")
-    implementation("dev.rikka.rikkax.material:material:2.7.0")
-    implementation("dev.rikka.rikkax.material:material-preference:2.0.0")
-    implementation("jp.wasabeef:glide-transformations:4.3.0")
-    implementation("androidx.webkit:webkit:1.9.0")
-    implementation("org.jsoup:jsoup:1.17.2")
+    androidTestImplementation(libs.androidx.ext.junit)
+    androidTestImplementation(libs.androidx.espresso.core)
+    debugImplementation(libs.leakcanary.android)
+    implementation(libs.androidx.appcompat)
+    implementation(libs.androidx.constraintlayout)
+    implementation(libs.androidx.fragment.ktx)
+    implementation(libs.androidx.lifecycle.extensions)
+    implementation(libs.androidx.lifecycle.livedata.ktx)
+    implementation(libs.androidx.lifecycle.viewmodel.ktx)
+    implementation(libs.androidx.preference.ktx)
+    implementation(libs.androidx.room.ktx)
+    implementation(libs.androidx.room.runtime)
+    ksp(libs.androidx.room.compiler)
+    implementation(libs.androidx.swiperefreshlayout)
+    implementation(libs.androidx.webkit)
+    implementation(libs.androidx.core.ktx)
+    implementation(libs.google.android.flexbox)
+    implementation(libs.google.android.material)
+    implementation(libs.google.dagger.hilt.android)
+    ksp(libs.google.dagger.hilt.android.compiler)
+    implementation(libs.rikkax.borderview)
+    implementation(libs.rikkax.material.preference)
+    implementation(libs.rikkax.material)
+    implementation(libs.retrofit)
+    implementation(libs.retrofit.converter.gson)
+    implementation(libs.okhttp3.logging.interceptor)
+    implementation(libs.glide)
+    ksp(libs.glide.ksp)
+    implementation(libs.glide.okhttp3.integration)
+    implementation(libs.glide.transformations)
     implementation(project(":mojito"))
     implementation(project(":SketchImageViewLoader"))
     implementation(project(":GlideImageLoader"))
-    implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
-    implementation("androidx.room:room-runtime:2.6.1")
-    ksp("androidx.room:room-compiler:2.6.1")
-    implementation("com.github.megatronking.stringfog:xor:5.0.0")
-    implementation("com.microsoft.appcenter:appcenter-analytics:5.0.4")
-    implementation("com.microsoft.appcenter:appcenter-crashes:5.0.4")
-    implementation("com.github.zhaobozhen.libraries:utils:1.1.4")
-    debugImplementation("com.squareup.leakcanary:leakcanary-android:2.13")
+    implementation(libs.appcenter.analytics)
+    implementation(libs.appcenter.crashes)
+    implementation(libs.drakeet.about)
+    implementation(libs.jbcrypt)
+    implementation(libs.jsoup)
+    implementation(libs.zhaobozhen.libraries.utils)
+    testImplementation(libs.junit)
 }

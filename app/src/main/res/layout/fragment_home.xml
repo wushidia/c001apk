@@ -1,13 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    app:consumeSystemWindowsInsets="@integer/internal_fragment_insets"
+    android:fitsSystemWindows="false"
+    app:consumeSystemWindowsInsets="end"
     app:edgeToEdge="true"
-    app:fitsSystemWindowsInsets="@integer/internal_fragment_insets"
-    tools:context=".ui.fragment.feed.FeedFragment">
+    app:fitsSystemWindowsInsets="end">
 
     <com.google.android.material.appbar.AppBarLayout
         android:id="@+id/appBar"
@@ -32,23 +31,11 @@
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent"
                 app:tabGravity="fill"
-                app:tabIndicatorFullWidth="false"
                 app:tabMinWidth="0dp"
-                app:tabMaxWidth="0dp"
                 app:tabMode="auto"
-                app:tabRippleColor="@android:color/transparent"
                 app:tabTextAppearance="@style/TabText" />
 
-            <View
-                android:layout_width="20dp"
-                android:layout_height="0dp"
-                android:layout_marginEnd="78dp"
-                android:background="@drawable/home_tab"
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintTop_toTopOf="parent" />
-
-            <ImageButton
+            <ImageView
                 android:id="@+id/search"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -57,12 +44,13 @@
                 android:layout_marginEnd="10dp"
                 android:background="?actionBarItemBackground"
                 android:src="@drawable/ic_search"
+                android:tooltipText="@string/search"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toStartOf="@id/menu"
                 app:layout_constraintStart_toEndOf="@id/tabLayout"
                 app:layout_constraintTop_toTopOf="parent" />
 
-            <ImageButton
+            <ImageView
                 android:id="@+id/menu"
                 android:layout_width="24dp"
                 android:layout_height="24dp"
@@ -71,6 +59,7 @@
                 android:layout_marginEnd="10dp"
                 android:background="?actionBarItemBackground"
                 android:src="@drawable/ic_menu"
+                android:tooltipText="@string/edit_tab"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintTop_toTopOf="parent" />

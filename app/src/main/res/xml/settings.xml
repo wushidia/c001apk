@@ -4,11 +4,11 @@
     <PreferenceCategory android:title="@string/app_name">
         <Preference
             android:icon="@drawable/ic_phone"
-            android:key="zmlmId"
-            android:title="@string/zmlmId" />
+            android:key="szlmId"
+            android:title="@string/szlmId" />
         <Preference
             android:icon="@drawable/ic_dev_mode"
-            android:key="sbparams"
+            android:key="params"
             android:title="@string/params" />
     </PreferenceCategory>
 
@@ -61,7 +61,7 @@
             android:key="imageQuality"
             android:title="@string/image_quality" />
         <rikka.material.preference.MaterialSwitchPreference
-            android:defaultValue="false"
+            android:defaultValue="true"
             android:icon="@drawable/ic_filter"
             android:key="isColorFilter"
             android:title="@string/color_filter_in_dark_mode" />
@@ -82,16 +82,14 @@
             android:title="@string/record_history" />
         <rikka.material.preference.MaterialSwitchPreference
             android:defaultValue="true"
-            android:disableDependentsState="false"
             android:icon="@drawable/ic_emoji"
             android:key="showEmoji"
             android:title="@string/show_emoji" />
         <rikka.material.preference.MaterialSwitchPreference
-            android:defaultValue="false"
-            android:icon="@drawable/ic_clear_all"
-            android:key="isClearKeyWord"
-            android:title="@string/clear_Key_word"
-            />
+            android:defaultValue="true"
+            android:icon="@drawable/outline_system_update_24"
+            android:key="isCheckUpdate"
+            android:title="@string/check_apps_update" />
     </PreferenceCategory>
 
     <PreferenceCategory android:title="@string/others">

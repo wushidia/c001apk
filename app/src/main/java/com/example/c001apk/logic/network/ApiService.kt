@@ -7,6 +7,7 @@ import com.example.c001apk.logic.model.HomeFeedResponse
 import com.example.c001apk.logic.model.LikeFeedResponse
 import com.example.c001apk.logic.model.LikeReplyResponse
 import com.example.c001apk.logic.model.MessageResponse
+import com.example.c001apk.logic.model.PostReplyResponse
 import com.example.c001apk.logic.model.TotalReplyResponse
 import com.example.c001apk.logic.model.UpdateCheckResponse
 import com.example.c001apk.logic.model.UserProfileResponse
@@ -36,7 +37,6 @@ interface ApiService {
     ): Call<HomeFeedResponse>
 
     @GET("/v6/feed/detail")
-    //@FormUrlEncoded
     fun getFeedContent(
         @Query("id") id: String,
         @Query("rid") rid: String?
@@ -55,22 +55,24 @@ interface ApiService {
         @Query("fromFeedAuthor") fromFeedAuthor: Int
     ): Call<TotalReplyResponse>
 
-    @GET("/v6/search?showAnonymous=-1")
+    @GET("/v6/search")
     fun getSearch(
         @Query("type") type: String,
         @Query("feedType") feedType: String,
         @Query("sort") sort: String,
         @Query("searchValue") keyWord: String,
-        @Query("pageType") pageType: String,
-        @Query("pageParam") pageParam: String,
+        @Query("pageType") pageType: String?,
+        @Query("pageParam") pageParam: String?,
         @Query("page") page: Int,
-        @Query("showAnonymous") showAnonymous: Int
+        @Query("lastItem") lastItem: String?,
+        @Query("showAnonymous") showAnonymous: Int = -1
     ): Call<HomeFeedResponse>
 
     @GET("/v6/feed/replyList?listType=&discussMode=0&feedType=feed_reply&blockStatus=0&fromFeedAuthor=0")
     fun getReply2Reply(
         @Query("id") id: String,
-        @Query("page") page: Int
+        @Query("page") page: Int,
+        @Query("lastItem") lastItem: String?
     ): Call<TotalReplyResponse>
 
     @GET("/v6/user/space")
@@ -82,6 +84,7 @@ interface ApiService {
     fun getUserFeed(
         @Query("uid") uid: String,
         @Query("page") page: Int,
+        @Query("lastItem") lastItem: String?
     ): Call<HomeFeedResponse>
 
     @GET("/v6/apk/detail")
@@ -122,26 +125,19 @@ interface ApiService {
     fun getFollowList(
         @Url url: String,
         @Query("uid") uid: String,
-        @Query("page") page: Int
+        @Query("page") page: Int,
+        @Query("lastItem") lastItem: String?
     ): Call<HomeFeedResponse>
 
-    @POST("/v6/feed/like")
+    @POST
     fun postLikeFeed(
+        @Url url: String,
         @Query("id") id: String
     ): Call<LikeFeedResponse>
 
-    @POST("/v6/feed/unlike")
-    fun postUnLikeFeed(
-        @Query("id") id: String
-    ): Call<LikeFeedResponse>
-
-    @POST("/v6/feed/likeReply")
+    @POST
     fun postLikeReply(
-        @Query("id") id: String
-    ): Call<LikeReplyResponse>
-
-    @POST("/v6/feed/unLikeReply")
-    fun postUnLikeReply(
+        @Url url: String,
         @Query("id") id: String
     ): Call<LikeReplyResponse>
 
@@ -174,7 +170,7 @@ interface ApiService {
         @FieldMap data: HashMap<String, String>,
         @Query("id") id: String,
         @Query("type") type: String
-    ): Call<CheckResponse>
+    ): Call<PostReplyResponse>
 
     @GET("/v6/page/dataList")
     fun getDataList(
@@ -189,7 +185,8 @@ interface ApiService {
     fun getDyhDetail(
         @Query("dyhId") dyhId: String,
         @Query("type") type: String,
-        @Query("page") page: Int
+        @Query("page") page: Int,
+        @Query("lastItem") lastItem: String?
     ): Call<HomeFeedResponse>
 
     @GET("/auth/login")
@@ -206,7 +203,9 @@ interface ApiService {
 
     @GET
     fun getMessage(
-        @Url url: String, @Query("page") page: Int
+        @Url url: String,
+        @Query("page") page: Int,
+        @Query("lastItem") lastItem: String?
     ): Call<MessageResponse>
 
     @POST
@@ -236,6 +235,15 @@ interface ApiService {
         @Query("lastItem") lastItem: String?,
     ): Call<TotalReplyResponse>
 
+    @GET("/v6/question/answerList")
+    fun getAnswerList(
+        @Query("id") fid: String,
+        @Query("sort") sort: String,
+        @Query("page") page: Int,
+        @Query("firstItem") firstItem: String?,
+        @Query("lastItem") lastItem: String?,
+    ): Call<TotalReplyResponse>
+
     @GET("/v6/product/categoryList")
     fun getProductList(): Call<HomeFeedResponse>
 
@@ -245,7 +253,8 @@ interface ApiService {
         @Query("uid") uid: String?,
         @Query("id") id: String?,
         @Query("showDefault") showDefault: Int,
-        @Query("page") page: Int
+        @Query("page") page: Int,
+        @Query("lastItem") lastItem: String?
     ): Call<HomeFeedResponse>
 
     @POST

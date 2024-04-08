@@ -9,6 +9,7 @@ import android.os.Looper
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.os.BundleCompat
 import androidx.fragment.app.Fragment
 import net.mikaelzero.mojito.Mojito.Companion.imageLoader
 import net.mikaelzero.mojito.Mojito.Companion.imageViewFactory
@@ -59,7 +60,11 @@ class ImageMojitoFragment : Fragment(), IMojitoFragment, OnMojitoViewCallback {
             return
         }
         if (arguments != null) {
-            fragmentConfig = requireArguments().getParcelable(MojitoConstant.KEY_FRAGMENT_PARAMS)!!
+            fragmentConfig = BundleCompat.getParcelable(
+                requireArguments(),
+                MojitoConstant.KEY_FRAGMENT_PARAMS,
+                FragmentConfig::class.java
+            )!!
         }
         mImageLoader = imageLoader()
         mViewLoadFactory = if (ImageMojitoActivity.multiContentLoader != null) {
@@ -404,6 +409,12 @@ class ImageMojitoFragment : Fragment(), IMojitoFragment, OnMojitoViewCallback {
         super.onDestroyView()
         _binding = null
         mImageLoader?.cancel(showView.hashCode())
+        iProgress = null
+        fragmentCoverLoader = null
+        contentLoader = null
+        mViewLoadFactory = null
+        showView = null
+        mImageLoader = null
     }
 
     companion object {

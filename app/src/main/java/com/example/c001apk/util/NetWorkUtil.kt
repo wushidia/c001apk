@@ -10,14 +10,14 @@ import android.net.Uri
 import android.util.Log
 import android.widget.Toast
 import com.example.c001apk.MyApplication.Companion.context
-import com.example.c001apk.ui.activity.AppActivity
-import com.example.c001apk.ui.activity.CarouselActivity
-import com.example.c001apk.ui.activity.CoolPicActivity
-import com.example.c001apk.ui.activity.DyhActivity
-import com.example.c001apk.ui.activity.FeedActivity
-import com.example.c001apk.ui.activity.TopicActivity
-import com.example.c001apk.ui.activity.UserActivity
-import com.example.c001apk.ui.activity.WebViewActivity
+import com.example.c001apk.ui.app.AppActivity
+import com.example.c001apk.ui.carousel.CarouselActivity
+import com.example.c001apk.ui.coolpic.CoolPicActivity
+import com.example.c001apk.ui.dyh.DyhActivity
+import com.example.c001apk.ui.feed.FeedActivity
+import com.example.c001apk.ui.others.WebViewActivity
+import com.example.c001apk.ui.topic.TopicActivity
+import com.example.c001apk.ui.user.UserActivity
 
 
 object NetWorkUtil {
@@ -52,7 +52,14 @@ object NetWorkUtil {
             IntentUtil.startActivity<FeedActivity>(context) {
                 putExtra("id", id)
             }
-        } else if (replace.startsWith("#/feed/")) {
+        } else if (replace.startsWith("/picture/")) {
+            val id = if (replace.contains("shareKey"))
+                replace.substring(9, replace.indexOf("?shareKey"))
+            else replace.replace("/picture/", "")
+            IntentUtil.startActivity<FeedActivity>(context) {
+                putExtra("id", id)
+            }
+        } else if (replace.startsWith("#/feed/")) { // iconLinkGridCard-coolpic
             IntentUtil.startActivity<CarouselActivity>(context) {
                 putExtra("title", title)
                 putExtra("url", url)
@@ -97,7 +104,7 @@ object NetWorkUtil {
                 putExtra("title", title)
             }
         } else if (replace.startsWith("image.coolapk.com")) {
-            ImageUtil.startBigImgViewSimple(context, url.http2https())
+            ImageUtil.startBigImgViewSimple(context, url.http2https)
         } else if (url.startsWith("https://") || url.startsWith("http://")) {
             if (PrefManager.isOpenLinkOutside) {
                 val intent = Intent()
@@ -115,7 +122,7 @@ object NetWorkUtil {
                 }
             }
         } else {
-            Toast.makeText(context, "unsupported url: $url}", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, "unsupported url: $url", Toast.LENGTH_SHORT).show()
         }
     }
 
