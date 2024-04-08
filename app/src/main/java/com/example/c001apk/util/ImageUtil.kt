@@ -74,7 +74,7 @@ object ImageUtil {
     }
 
     fun proxyImageUrl(url: String): String {
-        var httpsUrl = url.http2https()
+        var httpsUrl = url.http2https
         //
         val flag =
             "proxy" == PrefManager.imageQuality && !httpsUrl.startsWith("https://wsrv.nl/")
@@ -91,7 +91,7 @@ object ImageUtil {
 
     fun showUserCover(view: ImageView, url: String?) {
         val newUrl = GlideUrl(
-            url?.http2https(),
+            url?.http2https,
             LazyHeaders.Builder().addHeader("User-Agent", USER_AGENT).build()
         )
         Glide
@@ -110,7 +110,7 @@ object ImageUtil {
     fun showIMG(view: ImageView, url: String?, isCover: Boolean = false) {
         url?.let {
             val newUrl = GlideUrl(
-                it.http2https(),
+                it.http2https,
                 LazyHeaders.Builder().addHeader("User-Agent", USER_AGENT).build()
             )
             Glide
@@ -149,7 +149,7 @@ object ImageUtil {
             try {
                 val file = Glide.with(ctx)
                     .asFile()
-                    .load(imageUrl.http2https())
+                    .load(imageUrl.http2https)
                     .submit()
                     .get()
                 val image = File(imagesDir, filename)
@@ -197,7 +197,7 @@ object ImageUtil {
             if (isEnd)
                 ToastUtil.toast(context, "文件已存在")
         } else {
-            downloadPicture(context, url.http2https(), filename, isEnd)
+            downloadPicture(context, url.http2https, filename, isEnd)
         }
     }
 
@@ -407,7 +407,7 @@ object ImageUtil {
         imageView: ImageView,
         url: String
     ) {
-        imageView.mojito(url.http2https()) {
+        imageView.mojito(url.http2https) {
             progressLoader {
                 DefaultPercentProgress()
             }
@@ -420,7 +420,7 @@ object ImageUtil {
                     position: Int
                 ) {
                     if (fragmentActivity != null) {
-                        showSaveImgDialog(fragmentActivity, url.http2https(), null)
+                        showSaveImgDialog(fragmentActivity, url.http2https, null)
                     } else {
                         Log.i("Mojito", "fragmentActivity is null, skip save image")
                     }
@@ -433,7 +433,7 @@ object ImageUtil {
         context: Context,
         url: String
     ) {
-        startBigImgViewSimple(context, listOf(url.http2https()))
+        startBigImgViewSimple(context, listOf(url.http2https))
     }
 
 
@@ -476,7 +476,7 @@ object ImageUtil {
 
     private fun downloadPicture(context: Context, url: String?, fileName: String, isEnd: Boolean) {
         val newUrl = GlideUrl(
-            url?.http2https(),
+            url?.http2https,
             LazyHeaders.Builder().addHeader("User-Agent", USER_AGENT).build()
         )
         Glide.with(context).downloadOnly().load(newUrl).into(object : FileTarget() {
