@@ -58,7 +58,7 @@ jobs:
 
       - name: Build with Gradle
         run: |
-          ./gradlew :app:assembleRelease
+          ./gradlew :app:assembleRelease -X lint -X lintVitalRelease -X test
 #        env:
 #          KEYSTORE_PATH: "../keystore.jks"
 #          KEYSTORE_PASSWORD: 123456
