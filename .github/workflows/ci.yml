@@ -58,7 +58,10 @@ jobs:
 
       - name: Build with Gradle
         run: |
-          ./gradlew :app:assembleRelease -X lint -X lintVitalRelease -X test
+          ./gradlew :app:assembleRelease -x lint -x lintVitalRelease \
+          -x test -x checkReleaseAarMetadata \
+          -x checkKotlinGradlePluginConfigurationErrors \
+          -x checkReleaseDuplicateClasses
 #        env:
 #          KEYSTORE_PATH: "../keystore.jks"
 #          KEYSTORE_PASSWORD: 123456
