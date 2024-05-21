@@ -5,7 +5,7 @@ import java.io.ByteArrayOutputStream
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.jetbrains.kotlin.android)
-    alias(libs.plugins.google.devtools.ksp)
+    //alias(libs.plugins.google.devtools.ksp)
     alias(libs.plugins.rikka.tools.materialthemebuilder)
     alias(libs.plugins.google.dagger.hilt.android)
     alias(libs.plugins.kotlin.kapt)
@@ -17,6 +17,12 @@ apply(plugin = "kotlin-kapt")
 kapt {
     generateStubs = true
     correctErrorTypes = true
+    
+    arguments {
+        arg("room.incremental", "true")
+        arg("room.expandProjection", "true")
+        arg("room.schemaLocation", "$projectDir/schemas".toString())
+    }
 }
 
 materialThemeBuilder {
@@ -55,23 +61,31 @@ materialThemeBuilder {
     generatePalette = true
 }
 
-val gitBuildNumber: Int by lazy {
-    val stdout = org.apache.commons.io.output.ByteArrayOutputStream()
-    rootProject.exec {
-        commandLine("git", "rev-list", "--count", "HEAD")
-        standardOutput = stdout
-    }
-    stdout.toString().trim().toInt()
-}
+val gitBuildNumber = providers.exec {
+    commandLine("git", "rev-list", "--count", "HEAD")
+}.standardOutput.asText.get().trim().toInt()
 
-val gitBuildName: String by lazy {
-    val stdout = org.apache.commons.io.output.ByteArrayOutputStream()
-    rootProject.exec {
-        commandLine("git", "rev-parse", "--short", "HEAD")
-        standardOutput = stdout
-    }
-    stdout.toString().trim()
-}
+//val gitBuildNumber: Int by lazy {
+//    val stdout = org.apache.commons.io.output.ByteArrayOutputStream()
+//    rootProject.exec {
+//        commandLine("git", "rev-list", "--count", "HEAD")
+//        standardOutput = stdout
+//    }
+//    stdout.toString().trim().toInt()
+//}
+
+val gitBuildName = providers.exec {
+    commandLine("git", "rev-parse", "--short", "HEAD")
+}.standardOutput.asText.get().trim()
+
+//val gitBuildName: String by lazy {
+//    val stdout = org.apache.commons.io.output.ByteArrayOutputStream()
+//    rootProject.exec {
+//        commandLine("git", "rev-parse", "--short", "HEAD")
+//        standardOutput = stdout
+//    }
+//    stdout.toString().trim()
+//}
 
 android {
     namespace = "com.example.c001apk"
@@ -107,6 +121,7 @@ android {
         }*/
         val signConfig = signingConfigs.getByName("keyStore")
         getByName("release") {
+            isCrunchPngs = false
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(
@@ -116,6 +131,7 @@ android {
             signingConfig = signConfig
         }
         getByName("debug") {
+            isCrunchPngs = false
             isMinifyEnabled = false
             isShrinkResources = false
             proguardFiles(
@@ -154,9 +170,11 @@ android {
             abiFilters += SUPPORTED_ABIS
         }
     }
-    ksp {
-        arg("room.schemaLocation", "$projectDir/schemas")
-    }
+
+    //ksp {
+    //    arg("room.schemaLocation", "$projectDir/schemas")
+    //}
+
     applicationVariants.all {
         outputs.all {
             val versionName = defaultConfig.versionName
@@ -188,14 +206,14 @@ dependencies {
     implementation(libs.androidx.preference.ktx)
     implementation(libs.androidx.room.ktx)
     implementation(libs.androidx.room.runtime)
-    ksp(libs.androidx.room.compiler)
+    kapt(libs.androidx.room.compiler)
     implementation(libs.androidx.swiperefreshlayout)
     implementation(libs.androidx.webkit)
     implementation(libs.androidx.core.ktx)
     implementation(libs.google.android.flexbox)
     implementation(libs.google.android.material)
     implementation(libs.google.dagger.hilt.android)
-    ksp(libs.google.dagger.hilt.android.compiler)
+    kapt(libs.google.dagger.hilt.android.compiler)
     implementation(libs.rikkax.borderview)
     implementation(libs.rikkax.material.preference)
     implementation(libs.rikkax.material)
@@ -203,7 +221,8 @@ dependencies {
     implementation(libs.retrofit.converter.gson)
     implementation(libs.okhttp3.logging.interceptor)
     implementation(libs.glide)
-    ksp(libs.glide.ksp)
+    //ksp(libs.glide.ksp)
+    kapt(libs.glide.compiler)
     implementation(libs.glide.okhttp3.integration)
     implementation(libs.glide.transformations)
     implementation(project(":mojito"))
