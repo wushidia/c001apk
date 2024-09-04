@@ -83,7 +83,7 @@ object ImageUtil {
             val suffix = httpsUrl.substring(lastIndexOf + 1)
             val toLowerCase = suffix.lowercase()
             if (allowImageSet.contains(toLowerCase)) {
-                httpsUrl = "https://wsrv.nl/?&n=-1&output=webp&url=$httpsUrl"
+                httpsUrl = "https://wsrv.nl/?&n=-1&output=webp&url=$httpsUrl&w=720"
             }
         }
         return httpsUrl
@@ -277,7 +277,7 @@ object ImageUtil {
 
         for (url in urlList) {
 
-            val httpsUrl = proxyImageUrl(url)
+            val httpsUrl =  proxyImageUrl(url)
             if (httpsUrl.endsWith(".s.jpg"))
                 originList.add(httpsUrl.replace(".s.jpg", ""))
             else if (httpsUrl.endsWith(".s2x.jpg"))
