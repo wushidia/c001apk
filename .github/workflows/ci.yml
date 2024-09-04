@@ -36,7 +36,7 @@ jobs:
         uses: actions/checkout@main
         with:
           submodules: 'recursive'
-          fetch-depth: 1
+          fetch-depth: 0
 
       - name: Gradle wrapper validation
         uses: gradle/wrapper-validation-action@main
