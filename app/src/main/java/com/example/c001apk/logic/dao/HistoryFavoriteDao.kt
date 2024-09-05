@@ -23,8 +23,10 @@ interface HistoryFavoriteDao {
     @Query("SELECT * FROM FeedEntity ORDER BY id DESC")
     fun loadAllListFlow(): Flow<List<FeedEntity>>
 
+    suspend fun isExist(fid: String): Boolean = isInnerExist(fid) ?: false
+
     @Query("SELECT 1 FROM FeedEntity WHERE fid = :fid LIMIT 1")
-    suspend fun isExist(fid: String): Boolean
+    suspend fun isInnerExist(fid: String): Boolean?
 
     @Query("DELETE FROM FeedEntity WHERE fid = :fid")
     suspend fun delete(fid: String)

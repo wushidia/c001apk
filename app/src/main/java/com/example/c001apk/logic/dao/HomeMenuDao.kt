@@ -27,8 +27,10 @@ interface HomeMenuDao {
     @Query("SELECT * FROM HomeMenu ORDER BY position ASC")
     fun loadAllListFlow(): Flow<List<HomeMenu>>
 
+    suspend fun isExist(title: String): Boolean = isInnerExist(title) ?: false
+
     @Query("SELECT 1 FROM HomeMenu WHERE title = :title LIMIT 1")
-    suspend fun isExist(title: String): Boolean
+    suspend fun isInnerExist(title: String): Boolean?
 
     @Query("DELETE FROM HomeMenu WHERE title = :title")
     suspend fun delete(title: String)
@@ -37,6 +39,6 @@ interface HomeMenuDao {
     suspend fun deleteAll()
 
     @Update
-    suspend fun updateList(list:List<HomeMenu>)
+    suspend fun updateList(list: List<HomeMenu>)
 
 }
