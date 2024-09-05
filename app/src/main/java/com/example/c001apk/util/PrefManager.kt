@@ -112,7 +112,7 @@ object PrefManager {
         set(value) = pref.edit().putString("BUILDNUMBER", value).apply()
 
     var SDK_INT: String
-        get() = pref.getString("SDK_INT", "")!!
+        get() = pref.getString("SDK_INT", Constants.SDK_VERSION_CODE)!!
         set(value) = pref.edit().putString("SDK_INT", value).apply()
 
     var ANDROID_VERSION: String
@@ -122,6 +122,10 @@ object PrefManager {
     var USER_AGENT: String
         get() = pref.getString("USER_AGENT", "")!!
         set(value) = pref.edit().putString("USER_AGENT", value).apply()
+    fun updateUserAgent() {
+        PrefManager.USER_AGENT =
+            "Dalvik/2.1.0 (Linux; U; Android ${PrefManager.ANDROID_VERSION}; ${PrefManager.MODEL} ${PrefManager.BUILDNUMBER}) (#Build; ${PrefManager.BRAND}; ${PrefManager.MODEL}; ${PrefManager.BUILDNUMBER}; ${PrefManager.ANDROID_VERSION}) +CoolMarket/${PrefManager.VERSION_NAME}-${PrefManager.VERSION_CODE}-${Constants.MODE}"
+    }
 
     var SZLMID: String
         get() = pref.getString("SZLMID", "")!!

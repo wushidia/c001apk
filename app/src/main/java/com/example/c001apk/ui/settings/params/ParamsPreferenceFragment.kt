@@ -472,8 +472,7 @@ class ParamsPreferenceFragment : PreferenceFragmentCompat(), SharedPreferences.O
     }
 
     private fun updateUserAgent() {
-        PrefManager.USER_AGENT =
-            "Dalvik/2.1.0 (Linux; U; Android ${PrefManager.ANDROID_VERSION}; ${PrefManager.MODEL} ${PrefManager.BUILDNUMBER}) (#Build; ${PrefManager.BRAND}; ${PrefManager.MODEL}; ${PrefManager.BUILDNUMBER}; ${PrefManager.ANDROID_VERSION}) +CoolMarket/${PrefManager.VERSION_NAME}-${PrefManager.VERSION_CODE}-${Constants.MODE}"
+        PrefManager.updateUserAgent()
     }
 
     override fun onDestroyView() {

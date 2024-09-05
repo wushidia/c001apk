@@ -17,6 +17,7 @@ object Constants {
     const val VERSION_NAME = "13.4.1"
     const val API_VERSION = "13"
     const val VERSION_CODE = "2312121"
+    const val SDK_VERSION_CODE = "33"
     val USER_AGENT =
         "Dalvik/2.1.0 (Linux; U; Android ${PrefManager.ANDROID_VERSION}; ${PrefManager.MODEL} ${PrefManager.BUILDNUMBER}) (#Build; ${PrefManager.BRAND}; ${PrefManager.MODEL}; ${PrefManager.BUILDNUMBER}; ${PrefManager.ANDROID_VERSION}) +CoolMarket/${PrefManager.VERSION_NAME}-${PrefManager.VERSION_CODE}-${MODE}"
 
