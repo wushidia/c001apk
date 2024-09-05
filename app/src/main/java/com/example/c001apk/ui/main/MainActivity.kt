@@ -121,7 +121,8 @@ class MainActivity : BaseActivity<ActivityMainBinding>(), IOnBottomClickContaine
     }
 
     private fun genData() {
-        viewModel.fetchAppInfo("com.coolapk.market")
+//        viewModel.fetchAppInfo("com.coolapk.market")
+        viewModel.getCheckLoginInfo()
     }
 
     private fun setBadge() {
