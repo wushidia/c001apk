@@ -27,12 +27,26 @@ interface StringEntityDao {
     @Query("SELECT * FROM StringEntity ORDER BY id DESC")
     fun loadAllListFlow(): Flow<List<StringEntity>>
 
+    /**
+     *  fix boolean java.lang.Boolean.booleanValue()' on a null object reference
+     */
+    suspend fun isExist(data: String): Boolean {
+        return isInnerExist(data) ?: false
+    }
+
     @Query("SELECT 1 FROM StringEntity WHERE data = :data LIMIT 1")
-    suspend fun isExist(data: String): Boolean
+    suspend fun isInnerExist(data: String): Boolean?
+
+    /**
+     *  fix boolean java.lang.Boolean.booleanValue()' on a null object reference
+     */
+    suspend fun isContain(data: String): Boolean {
+        return isInnerContain(data) ?: false
+    }
 
     @Transaction
     @Query("SELECT 1 FROM StringEntity WHERE :data LIKE '%' || data || '%' LIMIT 1")
-    suspend fun isContain(data: String): Boolean
+    suspend fun isInnerContain(data: String): Boolean?
 
     @Query("DELETE FROM StringEntity WHERE data = :data")
     suspend fun delete(data: String)
