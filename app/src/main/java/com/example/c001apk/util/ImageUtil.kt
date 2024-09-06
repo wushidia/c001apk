@@ -277,7 +277,7 @@ object ImageUtil {
 
         for (url in urlList) {
 
-            val httpsUrl =  proxyImageUrl(url)
+            val httpsUrl = proxyImageUrl(url)
             if (httpsUrl.endsWith(".s.jpg"))
                 originList.add(httpsUrl.replace(".s.jpg", ""))
             else if (httpsUrl.endsWith(".s2x.jpg"))
@@ -309,6 +309,7 @@ object ImageUtil {
             fragmentCoverLoader {
                 DefaultTargetFragmentCover()
             }
+
             setOnMojitoListener(object : SimpleMojitoViewCallback() {
                 override fun onStartAnim(position: Int) {
                     nineGridView.getImageViewAt(position)?.apply {
@@ -328,6 +329,10 @@ object ImageUtil {
                     nineGridView.getImageViews().forEachIndexed { index, imageView ->
                         imageView.isVisible = position != index
                     }
+                }
+
+                override fun onClickDownload(fragmentActivity: FragmentActivity?, url: String) {
+                    saveImage(fragmentActivity?.baseContext!!, url, true)
                 }
 
                 override fun onLongClick(
@@ -386,6 +391,10 @@ object ImageUtil {
                 setIndicator(CircleIndexIndicator())
             }
             setOnMojitoListener(object : SimpleMojitoViewCallback() {
+                override fun onClickDownload(fragmentActivity: FragmentActivity?, url: String) {
+                    saveImage(fragmentActivity?.baseContext!!, url, true)
+                }
+
                 override fun onLongClick(
                     fragmentActivity: FragmentActivity?,
                     view: View,
@@ -412,6 +421,10 @@ object ImageUtil {
                 DefaultPercentProgress()
             }
             setOnMojitoListener(object : SimpleMojitoViewCallback() {
+                override fun onClickDownload(fragmentActivity: FragmentActivity?, url: String) {
+                    saveImage(fragmentActivity?.baseContext!!, url, true)
+                }
+
                 override fun onLongClick(
                     fragmentActivity: FragmentActivity?,
                     view: View,
@@ -452,7 +465,7 @@ object ImageUtil {
         intent.type = "image/*"
         intent.putExtra(Intent.EXTRA_STREAM, contentUri)
         intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-        context.startActivity(Intent.createChooser(intent, title))
+        context.startActivity(Intent.createChooser(intent, title?: ""))
     }
 
     private fun shareVideo(context: Context, file: File, title: String?) {
