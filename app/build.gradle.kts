@@ -232,7 +232,7 @@ dependencies {
     implementation("com.github.tulip799837434.mojito:SketchImageViewLoader:1.0.5")
     implementation("com.github.tulip799837434.mojito:GlideImageLoader:1.0.5")
 //    implementation(libs.appcenter.analytics)
-//    implementation(libs.appcenter.crashes)
+    implementation(libs.appcenter.crashes)
     implementation(libs.drakeet.about)
     implementation(libs.jbcrypt)
     implementation(libs.jsoup)
