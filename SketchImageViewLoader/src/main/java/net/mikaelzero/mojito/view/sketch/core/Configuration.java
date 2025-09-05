@@ -47,7 +47,7 @@ import net.mikaelzero.mojito.view.sketch.core.request.HelperFactory;
 import net.mikaelzero.mojito.view.sketch.core.request.RequestExecutor;
 import net.mikaelzero.mojito.view.sketch.core.request.RequestFactory;
 import net.mikaelzero.mojito.view.sketch.core.uri.UriModelManager;
-
+import com.example.c001apk.constant.Constants;
 
 /**
  * {@link Sketch} 唯一配置类
@@ -117,7 +117,8 @@ public final class Configuration {
 
         this.decoder = new ImageDecoder();
         this.executor = new RequestExecutor();
-        this.httpStack = new HurlStack();
+        this.httpStack = new HurlStack()
+        .setUserAgent(Constants.USER_AGENT);
         this.downloader = new ImageDownloader();
         this.sizeCalculator = new ImageSizeCalculator();
         this.freeRideManager = new FreeRideManager();
