@@ -20,23 +20,25 @@ object ApiServiceCreator {
     private const val API2_BASE_URL = "https://api2.coolapk.com"
     private const val ACCOUNT_BASE_URL = "https://account.coolapk.com"
 
-    private fun getClient(serviceType: ServiceType, followRedirects: Boolean): OkHttpClient =
-        OkHttpClient.Builder()
-            .addInterceptor(
-                when (serviceType) {
-                    ServiceType.API_SERVICE, ServiceType.API2_SERVICE -> AddCookiesInterceptor
-                    ServiceType.ACCOUNT_SERVICE -> LoginCookiesInterceptor
-                }
-            )
-            .addInterceptor(
-                HttpLoggingInterceptor().setLevel
-                    (
-                    if (BuildConfig.DEBUG) HttpLoggingInterceptor.Level.BODY
-                    else HttpLoggingInterceptor.Level.NONE
-                )
-            )
-            .followRedirects(followRedirects)
-            .build()
+    private fun getClient(serviceType: ServiceType, followRedirects: Boolean): OkHttpClient {
+    val builder = OkHttpClient.Builder()
+    if (serviceType == ServiceType.API_SERVICE || serviceType == ServiceType.API2_SERVICE) {
+        builder.addInterceptor(AddCookiesInterceptor)
+    }
+    builder.addInterceptor(
+        HttpLoggingInterceptor().apply {
+            level = if (BuildConfig.DEBUG) {
+                HttpLoggingInterceptor.Level.BODY
+            } else {
+                HttpLoggingInterceptor.Level.NONE
+            }
+        }
+    )
+    builder.followRedirects(followRedirects)
+    return builder.build()
+    }
+
+    
 
 
     private fun getRetrofit(serviceType: ServiceType, followRedirects: Boolean): Retrofit =
